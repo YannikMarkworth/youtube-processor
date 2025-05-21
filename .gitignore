@@ -1,0 +1,26 @@
+# Virtual Environment
+venv/
+.venv/
+
+# Python cache files
+*.pyc
+__pycache__/
+
+# Secrets file
+.env
+
+# OAuth token file (we'll potentially use this later)
+token.json
+
+# Log files
+*.log
+processed_log.json
+
+# Output files (optional, but good if you generate many)
+output/
+
+# VS Code settings
+.vscode/
+
+# Playlist Link 
+playlist_url.txt

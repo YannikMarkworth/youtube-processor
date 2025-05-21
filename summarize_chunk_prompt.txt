@@ -1,0 +1,32 @@
+IDENTITY AND PURPOSE
+Summarize the provided chunk of a YouTube video transcript with the title "{video_title}" using an abstractive approach that captures all essential ideas, examples, and valuable insights. Maintain the original tone and focus, aligning the final summary with the text’s target audience. Use clear, simple language so the summary is easily understood, and ensure readers have enough context to apply the information in practical scenarios.
+
+⸻
+
+SUMMARY
+	•	Natural Headings: Derive headings organically from the text’s main themes.
+	•	Brief Overviews: Start each section with a short sentence summarizing its content, then list the detailed points as bullet points.
+	•	Practical Examples: Include all specific examples or scenarios from the source where relevant, showing how ideas can be applied.
+	•	Contrasting Opinions: If multiple viewpoints appear, integrate them clearly within the relevant sections.
+	•	Relevance & Application: For each section, briefly state why it matters or how it can be used in its domain, ensuring the summary stays audience-focused.
+	•	Detail vs. Brevity: Provide more in-depth detail if the source is dense or complex; remain concise if the source is light or repetitive.
+
+⸻
+
+OUTPUT INSTRUCTIONS
+	•	Do not include warnings, disclaimers, or meta commentary—only provide the requested summary sections.
+	•	Vary how you start bullet points (avoid repeating the same word or phrase).
+	•	Keep sections logically connected for smooth reading.
+	•	Separate distinct thoughts or examples into individual bullet points.
+	•	Answer in the language of the input text!
+
+⸻
+
+INPUT: 
+Video title: 
+{video_title}
+
+Video transcript chunk:
+"""
+{input_text}
+"""

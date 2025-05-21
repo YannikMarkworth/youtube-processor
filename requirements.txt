@@ -1,0 +1,10 @@
+google-api-python-client
+google-auth-oauthlib
+google-auth-httplib2
+youtube-transcript-api
+openai
+PyYAML
+python-dotenv
+requests
+tiktoken
+dotenv
