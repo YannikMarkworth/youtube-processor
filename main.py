@@ -87,21 +87,46 @@ def process_playlist(playlist_url):
         print(f"Warnung: Keine Videos in Playlist '{raw_playlist_title}' gefunden.")
         return
 
-    total_videos, processed_count, skipped_count, failed_to_create_files_count = len(video_items), 0, 0, 0 # Renamed failed_count
+    total_videos = len(video_items)
     logging.info(f"{total_videos} videos found in playlist '{raw_playlist_title}'.")
     print(f"{total_videos} Videos in Playlist '{raw_playlist_title}' gefunden.")
+    
+    # --- OPTIMIZATION: Filter out videos that already have summaries BEFORE fetching details ---
+    print("Checking for existing summaries to avoid redundant API calls...")
+    videos_to_process = []
+    for video_id, playlist_item_id in video_items:
+        if file_utils.check_summary_exists(video_id, cleaned_playlist_name_for_path_and_filename):
+            logging.info(f"Skipping API fetch for video ID '{video_id}' - summary already exists.")
+        else:
+            videos_to_process.append((video_id, playlist_item_id))
+    
+    skipped_count = total_videos - len(videos_to_process)
+    if skipped_count > 0:
+        print(f"Skipped {skipped_count} videos that have already been processed.")
+
+    if not videos_to_process:
+        print("All videos in this playlist have already been processed.")
+        logging.info(f"All {total_videos} videos in playlist '{raw_playlist_title}' already processed. Nothing to do.")
+        return
+    # --- End of Optimization ---
+
+    processed_count = 0
+    failed_to_create_files_count = 0
+    total_to_process = len(videos_to_process)
     
     playlist_transcript_subfolder = config.TRANSCRIPTS_DIR / cleaned_playlist_name_for_path_and_filename
     playlist_summary_subfolder = config.SUMMARIES_DIR / cleaned_playlist_name_for_path_and_filename
 
-    for index, (video_id, _) in enumerate(video_items):
+    # Loop over the pre-filtered list of videos that need processing
+    for index, (video_id, _) in enumerate(videos_to_process):
         current_video_num = index + 1
-        logging.info(f"--- Processing video {current_video_num}/{total_videos} (ID: {video_id}) from playlist '{raw_playlist_title}' ---")
+        logging.info(f"--- Processing video {current_video_num}/{total_to_process} (ID: {video_id}) from playlist '{raw_playlist_title}' ---")
 
+        # Now we fetch details, knowing this video needs to be processed.
         video_details = youtube_utils.get_video_details(youtube, video_id)
         if not video_details:
             logging.error(f"FAILURE: Could not fetch details for video ID '{video_id}'. Skipped from further processing.")
-            failed_to_create_files_count += 1 # Count as a failure to create any files
+            failed_to_create_files_count += 1
             continue
 
         video_title_raw = video_details.get('title', 'untitled_video')
@@ -114,18 +139,10 @@ def process_playlist(playlist_url):
         
         logging.debug(f"Expected transcript file: {transcript_filepath}")
         logging.debug(f"Expected summary file: {summary_filepath}")
-
-        # Skip if summary file already exists (as per previous logic)
-        # This check now assumes that if a summary exists, the whole process for this video was completed.
-        if file_utils.check_summary_exists(video_id, cleaned_playlist_name_for_path_and_filename):
-            logging.info(f"Skipped: Summary for video ID '{video_id}' already exists in folder '{cleaned_playlist_name_for_path_and_filename}'.")
-            print(f"Übersprungen: Summary für {video_id} in Ordner '{cleaned_playlist_name_for_path_and_filename}' existiert bereits.")
-            skipped_count += 1
-            continue
         
         # --- Transcript Fetching and File Creation ---
         transcript_content = None
-        transcript_available_for_summarization = False # Flag to indicate if we have a real transcript
+        transcript_available_for_summarization = False
 
         if transcript_filepath.exists():
             logging.info(f"Transcript file found: {transcript_filepath.name}. Reading...")
@@ -135,7 +152,7 @@ def process_playlist(playlist_url):
             else:
                  logging.warning(f"Could not read content from existing transcript file: {transcript_filepath}. Using placeholder.")
                  transcript_content = "Transcript could not be loaded from existing file. Please paste manually."
-        else: # Transcript file does not exist, try fetching from API
+        else:
             logging.info(f"Transcript file not found for {video_id}. Fetching from API...")
             api_transcript = transcript_utils.get_transcript(video_id)
             if api_transcript is not None:
@@ -145,11 +162,10 @@ def process_playlist(playlist_url):
                 logging.warning(f"Transcript not available via API for video ID '{video_id}'. Using placeholder.")
                 transcript_content = "Transcript could not be fetched from API. Please paste manually if available elsewhere."
 
-        # Always try to create the transcript file (with content or placeholder)
         if not file_utils.create_transcript_file(video_details, transcript_content, transcript_filepath):
-            logging.error(f"FAILURE: Could not create transcript file (even with placeholder) at {transcript_filepath}. Skipping this video.")
+            logging.error(f"FAILURE: Could not create transcript file at {transcript_filepath}. Skipping this video.")
             failed_to_create_files_count += 1
-            continue # If we can't even save this, something is wrong with file system access for this video.
+            continue
         
         # --- Summarization ---
         summary_content = None
@@ -176,7 +192,7 @@ def process_playlist(playlist_url):
         # --- Summary File Creation ---
         if file_utils.create_summary_file(video_details, summary_content, summary_filepath, filename_core_component, raw_playlist_title):
             logging.info(f"Video {video_id} processed. Transcript and Summary files created/updated at {summary_filepath.parent}")
-            processed_count += 1 # Count as processed if all files are made.
+            processed_count += 1
             
             summary_filename_stem = summary_filepath.name.removesuffix('.md')
             link_path_for_master_log = f"summaries/{cleaned_playlist_name_for_path_and_filename}/{summary_filename_stem}"
@@ -184,12 +200,12 @@ def process_playlist(playlist_url):
                 "link_target": link_path_for_master_log,
                 "video_title": video_title_raw,
                 "playlist_context": raw_playlist_title,
-                "is_placeholder": is_placeholder_summary 
+                "is_placeholder": is_placeholder_summary,
+                "video_url": video_details.get("videoUrl", "")
             })
         else:
-            logging.error(f"FAILURE: Could not create summary file at {summary_filepath}. Transcript file might have been created.")
+            logging.error(f"FAILURE: Could not create summary file at {summary_filepath}.")
             failed_to_create_files_count += 1
-            # Transcript file might exist, but summary failed. Still counts as a failure to complete the pair.
 
     logging.info(f"--- Processing finished for playlist '{raw_playlist_title}' ---")
     logging.info(f"Stats: Total: {total_videos}, Processed (files created): {processed_count}, Skipped (already exists): {skipped_count}, Failed (file creation issue): {failed_to_create_files_count}")
@@ -198,7 +214,11 @@ def process_playlist(playlist_url):
 
 
 def update_master_summary_log():
-    # ... (update_master_summary_log remains mostly the same, but uses the 'is_placeholder' flag)
+    """
+    Updates the master summary log file with entries from the current run,
+    prepending them to the file. The format for each entry is the video URL
+    followed by a formatted Obsidian link.
+    """
     if not SUMMARIES_LOG_FOR_CURRENT_RUN:
         logging.info("No new summaries generated in this run to add to the master log.")
         return
@@ -207,28 +227,43 @@ def update_master_summary_log():
     logging.info(f"Updating master summary log: {master_log_filepath}")
 
     today_date = datetime.now().strftime("%Y-%m-%d")
+    
+    # Generate the full block of text for all new entries from this run
     new_entries_md = f"## Processed on {today_date}\n\n"
     for item in SUMMARIES_LOG_FOR_CURRENT_RUN:
-        placeholder_indicator = ""
-        if item.get("is_placeholder"):
-            placeholder_indicator = " (Placeholder - check content)" # General placeholder note
+        video_url = item.get("video_url")
+        link_target = item.get("link_target")
         
-        new_entries_md += f"- **{item['playlist_context']} / {item['video_title']}**{placeholder_indicator}: [[{item['link_target']}]]\n"
-    new_entries_md += "\n---\n\n"
+        # Desired display text format: "Playlist Title – Video Title"
+        display_text = f"{item['playlist_context']} – {item['video_title']}"
+        
+        # Add the YouTube URL line
+        if video_url:
+            new_entries_md += f"{video_url}\n"
+        
+        # Add the Obsidian link line with the custom display text
+        new_entries_md += f"[[{link_target}|{display_text}]]\n\n"
 
+    # Read the existing content of the log file
     existing_content = ""
     if master_log_filepath.exists():
-        try: existing_content = master_log_filepath.read_text(encoding="utf-8")
-        except Exception as e: logging.error(f"Error reading existing master summary log {master_log_filepath}: {e}")
+        try:
+            existing_content = master_log_filepath.read_text(encoding="utf-8")
+        except Exception as e:
+            logging.error(f"Error reading existing master summary log {master_log_filepath}: {e}")
+
+    # Write the new entries at the top of the file, followed by the old content
     try:
         with open(master_log_filepath, "w", encoding="utf-8") as f:
-            f.write(new_entries_md); f.write(existing_content)
+            f.write(new_entries_md)
+            f.write(existing_content)
         logging.info(f"Master summary log updated successfully. Added {len(SUMMARIES_LOG_FOR_CURRENT_RUN)} entries.")
         print(f"Master summary log '{master_log_filepath.name}' updated with {len(SUMMARIES_LOG_FOR_CURRENT_RUN)} new entries.")
     except Exception as e:
         logging.error(f"Error writing to master summary log {master_log_filepath}: {e}")
         print(f"FEHLER: Master summary log konnte nicht geschrieben werden: {e}")
     
+    # Clear the list for the next run
     SUMMARIES_LOG_FOR_CURRENT_RUN.clear()
 
 
