@@ -1,0 +1,53 @@
+# 2025-04-04 youtube-processor test 01
+# https://www.youtube.com/playlist?list=PLJMkfRJxSM4o1gxrIpgU83lcov998LpYH
+
+# D&D
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4qVcZtK_dBXbk9g6ErZbmKH
+
+# MTG
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4qPlyGer8JWRZjtOATlcRCk
+
+# Fitness
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4o-LABeve6u5DHknHdvSM0Y
+
+# Productivity
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4rgDlrUc099FXF0BzcFHXor
+
+# Science
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4q8mChRhZlmQtFvOgRtc1Vs
+
+# Misc
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4ogaM2kBtRJm5pMB9KIFUvS
+
+# Self Improvement
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4rYPwfsjUIC9eOfQI20p7DY
+
+# Filmmaking
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4o7pBuNlcuK8u8fU6fdqGMb
+
+# Kleinanzeigen Ideen
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4rvkN-O4lCzfZw7T6c7chE9
+
+# AI
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4poBPz_YucT-8ZjDUFefU4z
+
+# Politik
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4rG2B9BORyn4YXjM4nt34V8
+
+# YouTube Creator
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4plYdlmeXvJbIuiFjpdpR08
+
+# Liked to import
+# https://www.youtube.com/playlist?list=PLJMkfRJxSM4pq27Nbhmf0cs0w9oSJKZjJ
+
+# Parenting
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4rrdgIMAkvfNw_FVIjUJUgD
+
+# Neurodivergence
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4odLUa3ULjbqvLxWZZOzjFX
+
+# Finanzen
+https://www.youtube.com/playlist?list=PLJMkfRJxSM4p7POhKpqaVbzWnDFOReP_Y
+
+# Kleinanzeigen Was bisher geschah
+https://www.youtube.com/playlist?list=PLapHq--4Wlkta1ZP2tkpa32YZUbgkx2W5

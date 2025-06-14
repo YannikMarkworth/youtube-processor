@@ -1,139 +1,84 @@
-# === transcript_utils.py - Cleaned and Annotated ===
-
-"""
-Handles fetching video transcripts using the youtube-transcript-api library.
-Prioritizes German and English transcripts.
-"""
-
-import time
-import traceback
 import logging
 from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
-import xml.etree.ElementTree # Wichtig für ParseError
-
-# --- Main Transcript Fetching Function ---
 
 def get_transcript(video_id):
     """
-    Fetches the transcript for a given YouTube video ID, attempting to retrieve
-    either German ('de') or English ('en') versions.
-    Includes a retry mechanism for transient errors like ParseError.
+    Fetches a transcript using a multi-layered, resilient approach based on recent
+    community-found solutions. Tries multiple language codes and fallback methods.
     """
-    preferred_langs = ['de', 'en']
-    max_retries = 3  # Anzahl der Gesamtversuche (1 initial + 2 Wiederholungen)
-    base_initial_delay = 2 # Sekunden Wartezeit vor jedem Versuch (wie zuvor)
-    retry_specific_delay = 3 # Zusätzliche Sekunden Wartezeit zwischen den Wiederholungsversuchen
+    logging.info(f"Attempting to fetch transcript for {video_id} using resilient multi-layered approach.")
 
-    logging.info(f"Attempting to fetch transcript for {video_id} (Preferred Langs: {preferred_langs}). Max attempts: {max_retries}")
+    # --- Language Variants to Try ---
+    # We will try these in order, as YouTube is becoming more specific about language codes.
+    german_variants = ['de', 'de-DE']
+    english_variants = ['en', 'en-US', 'en-GB']
+    preferred_variants = german_variants + english_variants
 
-    for attempt in range(max_retries):
-        logging.debug(f"Transcript fetch attempt {attempt + 1}/{max_retries} for video {video_id}")
-        try:
-            # Grundlegende Wartezeit vor jedem Versuch
-            logging.debug(f"Waiting for {base_initial_delay} seconds before API call (Attempt {attempt + 1})...")
-            time.sleep(base_initial_delay)
+    # --- Method 1: Direct fetch using a list of preferred language variants ---
+    # This is a fast first attempt.
+    logging.debug(f"Method 1: Attempting direct fetch with variants {preferred_variants}")
+    try:
+        transcript_segments = YouTubeTranscriptApi.get_transcript(video_id, languages=preferred_variants)
+        logging.info(f"Method 1 SUCCESS: Directly fetched a transcript for {video_id}.")
+        print(f"Successfully fetched transcript for video: {video_id} (Direct Method)")
+        full_transcript = " ".join([segment['text'] for segment in transcript_segments])
+        return full_transcript
+    except TranscriptsDisabled:
+        logging.warning(f"Transcripts are disabled for video {video_id}. No further attempts will be made.")
+        print(f"Warning: Transcripts are disabled for video {video_id}.")
+        return None
+    except NoTranscriptFound:
+        logging.warning(f"Method 1 FAILED: No transcript found via direct fetch. Proceeding to Method 2.")
+    except Exception as e:
+        logging.warning(f"Method 1 FAILED with an unexpected error: {e}. Proceeding to Method 2.")
 
-            transcript_list_segments = YouTubeTranscriptApi.get_transcript(video_id, languages=preferred_langs)
-            full_transcript = " ".join([segment['text'] for segment in transcript_list_segments])
 
-            logging.info(f"Successfully fetched transcript for {video_id} on attempt {attempt + 1}.")
-            print(f"Successfully fetched transcript for video: {video_id} (Attempt {attempt + 1})")
-            return full_transcript
+    # --- Method 2: List all available transcripts and manually find a match ---
+    # This method is slower but more thorough.
+    logging.debug("Method 2: Listing all available transcripts and searching manually.")
+    try:
+        # Use the modern, instance-based approach to be safe.
+        yt_api = YouTubeTranscriptApi()
+        transcript_list = yt_api.list(video_id)
+        
+        # 2a: Look for an exact match in our preferred variants
+        for lang_code in preferred_variants:
+            try:
+                transcript = transcript_list.find_transcript([lang_code])
+                logging.info(f"Method 2a SUCCESS: Found transcript via list-and-find for lang_code '{lang_code}'.")
+                print(f"Successfully fetched transcript for video: {video_id} (List-and-Find Method)")
+                transcript_segments = transcript.fetch()
+                return " ".join([segment['text'] for segment in transcript_segments])
+            except NoTranscriptFound:
+                continue # This language code wasn't in the list, try the next one.
+        
+        # 2b: If no preferred language found, try to find ANY auto-generated transcript as a fallback.
+        logging.debug("Method 2b: No preferred language found. Looking for any auto-generated transcript.")
+        for transcript in transcript_list:
+            if transcript.is_generated:
+                logging.info(f"Method 2b SUCCESS: Found an auto-generated transcript in '{transcript.language_code}'.")
+                print(f"Successfully fetched transcript for video: {video_id} (Auto-generated Fallback)")
+                transcript_segments = transcript.fetch()
+                return " ".join([segment['text'] for segment in transcript_segments])
 
-        except (TranscriptsDisabled, NoTranscriptFound) as e_known_negative:
-            # Bei diesen Fehlern ist das Transkript definitiv nicht verfügbar oder nicht in den bevorzugten Sprachen.
-            # Eine Wiederholung ist sinnlos.
-            logging.warning(f"{type(e_known_negative).__name__} for video {video_id} on attempt {attempt + 1}: {e_known_negative}")
-            print(f"Warning: {type(e_known_negative).__name__} for video {video_id}. {e_known_negative}")
-            return None # Sofort beenden und None zurückgeben
+        # 2c: If still nothing, just grab the very first transcript in the list as a last resort.
+        logging.debug("Method 2c: No auto-generated one found. Grabbing the first available transcript in the list.")
+        first_transcript = next(iter(transcript_list), None) # Safely get the first item or None
+        if first_transcript:
+            logging.info(f"Method 2c SUCCESS: Found a transcript in '{first_transcript.language_code}' as a final resort.")
+            print(f"Successfully fetched transcript for video: {video_id} (First-Available Fallback)")
+            transcript_segments = first_transcript.fetch()
+            return " ".join([segment['text'] for segment in transcript_segments])
 
-        except xml.etree.ElementTree.ParseError as e_parse:
-            logging.warning(
-                f"XML ParseError on attempt {attempt + 1}/{max_retries} for {video_id}. Error: {e_parse}\n"
-                f"Traceback (condensed for ParseError): {traceback.format_exc().splitlines()[-3:]}" # Loggt nur die relevantesten Teile des ParseError Tracebacks
-            )
-            if attempt < max_retries - 1:
-                logging.info(f"Waiting {retry_specific_delay} seconds before retrying {video_id} due to ParseError...")
-                time.sleep(retry_specific_delay)
-                # Schleife wird fortgesetzt für den nächsten Versuch
-            else:
-                logging.error(f"Failed to fetch transcript for {video_id} after {max_retries} attempts due to persistent ParseError.")
-                print(f"Error: XML ParseError for {video_id} after {max_retries} attempts. Check error_log.log.")
-                return None # Nach allen Versuchen fehlgeschlagen
+    except TranscriptsDisabled:
+        logging.warning(f"Transcripts are disabled for video {video_id} (checked in Method 2).")
+        print(f"Warning: Transcripts are disabled for video {video_id}.")
+        return None
+    except Exception as e:
+        logging.error(f"Method 2 FAILED with an unexpected error: {e}", exc_info=True)
+        print(f"Error: Could not retrieve transcript for {video_id}. Check the error_log.log file.")
+        return None
 
-        except Exception as e_general:
-            # Alle anderen unerwarteten Fehler
-            logging.error(
-                f"Unexpected error on attempt {attempt + 1}/{max_retries} for {video_id}. Error: {e_general}\n"
-                f"Traceback: {traceback.format_exc()}"
-            )
-            if attempt < max_retries - 1:
-                logging.info(f"Waiting {retry_specific_delay} seconds before retrying {video_id} due to unexpected error...")
-                time.sleep(retry_specific_delay)
-                # Schleife wird fortgesetzt für den nächsten Versuch
-            else:
-                logging.error(f"Failed to fetch transcript for {video_id} after {max_retries} attempts due to persistent unexpected error.")
-                print(f"Error: Could not fetch transcript for {video_id} after {max_retries} attempts. Reason: {e_general}. Check error_log.log.")
-                return None # Nach allen Versuchen fehlgeschlagen
-
-    # Dieser Punkt sollte idealerweise nicht erreicht werden, wenn die Logik oben korrekt ist,
-    # aber als Fallback geben wir None zurück.
-    logging.error(f"Exited retry loop for {video_id} without success or explicit failure handling within loop.")
+    # If all methods have failed to return a value, this is the final failure.
+    logging.error(f"All methods failed to retrieve a transcript for {video_id}.")
     return None
-
-# --- Optional Testing Area ---
-# This block only runs when the script is executed directly (python transcript_utils.py)
-if __name__ == "__main__":
-    # Configure basic logging for testing this module directly
-    # Note: This might conflict slightly if run *after* main.py's logging is set,
-    # but it's useful for isolated testing.
-    logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
-
-    print("-" * 20)
-    print("--- Running transcript_utils.py directly for testing ---")
-    print("-" * 20)
-
-    # Example Video IDs for testing different scenarios
-    TEST_VIDEO_ID_WITH_TRANSCRIPT_EN = "dQw4w9WgXcQ" # Rick Astley (usually has 'en')
-    TEST_VIDEO_ID_WITH_TRANSCRIPT_DE = "QO2m698NaLs" # Your German example video
-    TEST_VIDEO_ID_WITHOUT_TRANSCRIPT = "klGadYn5p70" # Short test video (likely none)
-    # TEST_VIDEO_ID_DISABLED = "VIDEO_ID_HERE" # Find one if needed
-
-    # Test Case 1: English video
-    print(f"\n--- Testing English Video: {TEST_VIDEO_ID_WITH_TRANSCRIPT_EN} ---")
-    transcript1 = get_transcript(TEST_VIDEO_ID_WITH_TRANSCRIPT_EN)
-    if transcript1:
-        print("Transcript found (first 300 chars):")
-        print(transcript1[:300] + "...")
-    else:
-        print("Transcript retrieval failed.")
-
-    # Test Case 2: German video
-    print(f"\n--- Testing German Video: {TEST_VIDEO_ID_WITH_TRANSCRIPT_DE} ---")
-    transcript_de = get_transcript(TEST_VIDEO_ID_WITH_TRANSCRIPT_DE)
-    if transcript_de:
-        print("Transcript found (first 300 chars):")
-        print(transcript_de[:300] + "...")
-    else:
-        print("Transcript retrieval failed.")
-
-    # Test Case 3: Video likely without transcript
-    print(f"\n--- Testing No Transcript Video: {TEST_VIDEO_ID_WITHOUT_TRANSCRIPT} ---")
-    transcript2 = get_transcript(TEST_VIDEO_ID_WITHOUT_TRANSCRIPT)
-    if transcript2:
-        print("Transcript found unexpectedly:")
-        print(transcript2[:300] + "...")
-    else:
-        print("Transcript retrieval failed (expected for this video).")
-
-    # Test Case 4: Disabled (if you find an ID)
-    # if TEST_VIDEO_ID_DISABLED != "VIDEO_ID_HERE":
-    #     print(f"\n--- Testing Disabled Transcript Video: {TEST_VIDEO_ID_DISABLED} ---")
-    #     transcript3 = get_transcript(TEST_VIDEO_ID_DISABLED)
-    #     if not transcript3:
-    #         print("Transcript retrieval failed (expected for disabled).")
-    #     else:
-    #          print("Transcript found unexpectedly.")
-
-
-    print("\n--- Testing finished ---")

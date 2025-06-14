@@ -10,5 +10,8 @@ cd /path/to/your/youtube-processor
 Activate the environment:
 source venv/bin/activate
 
+Deactivate the environment:
+deactivate
+
 Check for the (venv) prefix in your prompt to confirm it's active before running any python or pip commands for this project.
 VS Code Note: Sometimes, if you have the Python interpreter for the project correctly set within VS Code (pointing to the one inside venv), VS Code's integrated terminal might automatically activate the environment for you when you open a new terminal panel. However, it's always best practice to glance at the prompt and make sure (venv) is there before you start working. If it's missing, just run the source venv/bin/activate command.
