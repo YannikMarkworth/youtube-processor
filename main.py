@@ -56,6 +56,45 @@ def extract_playlist_id(url):
     print(f"Error: Could not find a valid YouTube Playlist ID in URL: {url}\nEnsure the URL contains 'list=PLAYLIST_ID'.")
     return None
 
+def update_playlist_summary_log(video_details, raw_playlist_title, cleaned_playlist_name, summary_filename_stem):
+    """
+    Creates or updates a playlist-specific log file within that playlist's summary folder.
+    The log file will be named using the playlist's name.
+    """
+    try:
+        # Use the new naming convention: [playlistname]_playlist_log.md
+        playlist_log_path = config.SUMMARIES_DIR / cleaned_playlist_name / f"{cleaned_playlist_name}_playlist_log.md"
+
+        # 1. Prepare the new entry content
+        video_url = video_details.get("videoUrl", "")
+        video_title = video_details.get("title", "Untitled Video")
+        display_text = f"{raw_playlist_title} – {video_title}"
+        
+        today_date = datetime.now().strftime("%Y-%m-%d")
+        
+        new_log_block = f"## Processed on {today_date}\n\n"
+        if video_url:
+            new_log_block += f"{video_url}\n"
+        
+        new_log_block += f"[[{summary_filename_stem}|{display_text}]]\n\n"
+        
+        # 2. Read existing content if the file exists
+        existing_content = ""
+        if playlist_log_path.exists():
+            existing_content = playlist_log_path.read_text(encoding="utf-8")
+                
+        # 3. Write the new block, followed by a separator, then the old content
+        with open(playlist_log_path, "w", encoding="utf-8") as f:
+            f.write(new_log_block)
+            if existing_content:
+                f.write("---\n\n")
+                f.write(existing_content)
+        logging.info(f"Updated playlist log: {playlist_log_path.name}")
+
+    except Exception as e:
+        logging.error(f"Failed to write to playlist log for '{cleaned_playlist_name}': {e}")
+        print(f"Warning: Could not update the individual log for playlist '{cleaned_playlist_name}'.")
+
 def process_playlist(playlist_url):
     logging.info(f"Attempting to process playlist URL: {playlist_url}")
     playlist_id = extract_playlist_id(playlist_url)
@@ -91,7 +130,6 @@ def process_playlist(playlist_url):
     logging.info(f"{total_videos} videos found in playlist '{raw_playlist_title}'.")
     print(f"{total_videos} Videos in Playlist '{raw_playlist_title}' gefunden.")
     
-    # --- OPTIMIZATION: Filter out videos that already have summaries BEFORE fetching details ---
     print("Checking for existing summaries to avoid redundant API calls...")
     videos_to_process = []
     for video_id, playlist_item_id in video_items:
@@ -108,7 +146,6 @@ def process_playlist(playlist_url):
         print("All videos in this playlist have already been processed.")
         logging.info(f"All {total_videos} videos in playlist '{raw_playlist_title}' already processed. Nothing to do.")
         return
-    # --- End of Optimization ---
 
     processed_count = 0
     failed_to_create_files_count = 0
@@ -117,12 +154,10 @@ def process_playlist(playlist_url):
     playlist_transcript_subfolder = config.TRANSCRIPTS_DIR / cleaned_playlist_name_for_path_and_filename
     playlist_summary_subfolder = config.SUMMARIES_DIR / cleaned_playlist_name_for_path_and_filename
 
-    # Loop over the pre-filtered list of videos that need processing
     for index, (video_id, _) in enumerate(videos_to_process):
         current_video_num = index + 1
         logging.info(f"--- Processing video {current_video_num}/{total_to_process} (ID: {video_id}) from playlist '{raw_playlist_title}' ---")
 
-        # Now we fetch details, knowing this video needs to be processed.
         video_details = youtube_utils.get_video_details(youtube, video_id)
         if not video_details:
             logging.error(f"FAILURE: Could not fetch details for video ID '{video_id}'. Skipped from further processing.")
@@ -140,7 +175,6 @@ def process_playlist(playlist_url):
         logging.debug(f"Expected transcript file: {transcript_filepath}")
         logging.debug(f"Expected summary file: {summary_filepath}")
         
-        # --- Transcript Fetching and File Creation ---
         transcript_content = None
         transcript_available_for_summarization = False
 
@@ -167,7 +201,6 @@ def process_playlist(playlist_url):
             failed_to_create_files_count += 1
             continue
         
-        # --- Summarization ---
         summary_content = None
         is_placeholder_summary = False
 
@@ -189,12 +222,12 @@ def process_playlist(playlist_url):
                 summary_content = "AI summary generation failed. Please check AI service or logs."
                 is_placeholder_summary = True
         
-        # --- Summary File Creation ---
         if file_utils.create_summary_file(video_details, summary_content, summary_filepath, filename_core_component, raw_playlist_title):
             logging.info(f"Video {video_id} processed. Transcript and Summary files created/updated at {summary_filepath.parent}")
             processed_count += 1
             
             summary_filename_stem = summary_filepath.name.removesuffix('.md')
+            
             link_path_for_master_log = f"summaries/{cleaned_playlist_name_for_path_and_filename}/{summary_filename_stem}"
             SUMMARIES_LOG_FOR_CURRENT_RUN.append({
                 "link_target": link_path_for_master_log,
@@ -203,6 +236,13 @@ def process_playlist(playlist_url):
                 "is_placeholder": is_placeholder_summary,
                 "video_url": video_details.get("videoUrl", "")
             })
+            
+            update_playlist_summary_log(
+                video_details,
+                raw_playlist_title,
+                cleaned_playlist_name_for_path_and_filename,
+                summary_filename_stem
+            )
         else:
             logging.error(f"FAILURE: Could not create summary file at {summary_filepath}.")
             failed_to_create_files_count += 1
@@ -214,11 +254,6 @@ def process_playlist(playlist_url):
 
 
 def update_master_summary_log():
-    """
-    Updates the master summary log file with entries from the current run,
-    prepending them to the file. The format for each entry is the video URL
-    followed by a formatted Obsidian link.
-    """
     if not SUMMARIES_LOG_FOR_CURRENT_RUN:
         logging.info("No new summaries generated in this run to add to the master log.")
         return
@@ -228,23 +263,16 @@ def update_master_summary_log():
 
     today_date = datetime.now().strftime("%Y-%m-%d")
     
-    # Generate the full block of text for all new entries from this run
     new_entries_md = f"## Processed on {today_date}\n\n"
     for item in SUMMARIES_LOG_FOR_CURRENT_RUN:
         video_url = item.get("video_url")
         link_target = item.get("link_target")
-        
-        # Desired display text format: "Playlist Title – Video Title"
         display_text = f"{item['playlist_context']} – {item['video_title']}"
         
-        # Add the YouTube URL line
         if video_url:
             new_entries_md += f"{video_url}\n"
-        
-        # Add the Obsidian link line with the custom display text
         new_entries_md += f"[[{link_target}|{display_text}]]\n\n"
 
-    # Read the existing content of the log file
     existing_content = ""
     if master_log_filepath.exists():
         try:
@@ -252,7 +280,6 @@ def update_master_summary_log():
         except Exception as e:
             logging.error(f"Error reading existing master summary log {master_log_filepath}: {e}")
 
-    # Write the new entries at the top of the file, followed by the old content
     try:
         with open(master_log_filepath, "w", encoding="utf-8") as f:
             f.write(new_entries_md)
@@ -263,12 +290,10 @@ def update_master_summary_log():
         logging.error(f"Error writing to master summary log {master_log_filepath}: {e}")
         print(f"FEHLER: Master summary log konnte nicht geschrieben werden: {e}")
     
-    # Clear the list for the next run
     SUMMARIES_LOG_FOR_CURRENT_RUN.clear()
 
 
 if __name__ == "__main__":
-    # ... (if __name__ == "__main__" block remains the same)
     setup_logging() 
     logging.debug("--- MAIN SCRIPT EXECUTION STARTED ---")
     SUMMARIES_LOG_FOR_CURRENT_RUN.clear()
