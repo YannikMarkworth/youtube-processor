@@ -65,13 +65,20 @@ Due to recent changes in YouTube's rate-limiting policies, this script now **req
     ```
 
 5.  **API Keys & Configuration (`.env` file):**
-
-      * Create a file named `.env` in the project root.
-      * Add your API keys:
+    * Create a file named `.env` in the project root.
+    * **Choose your AI Provider:** Add the following line to select your summarization service. Options are `"openai"` or `"gemini"`.
         ```
-        YOUTUBE_API_KEY="your_google_cloud_api_key"
-        OPENAI_API_KEY="your_openai_api_key"
+        AI_PROVIDER="gemini"
         ```
+    * **Add your API keys:**
+        * `OPENAI_API_KEY`: Get from the [OpenAI Platform](https://platform.openai.com).
+        * `GEMINI_API_KEY`: Get from [Google AI Studio](https://aistudio.google.com/app/apikey).
+        * You only need to provide the key for the provider you have selected.
+        ```
+        OPENAI_API_KEY="your_openai_api_key_here"
+        GEMINI_API_KEY="your_gemini_api_key_here"
+        ```
+    * **Configure AI Parameters (Optional):** You can also override the default models, temperature, etc., for each provider in the `.env` file (e.g., `GEMINI_MODEL_NAME="gemini-1.5-pro-latest"`).
 
 6.  **Proxy Configuration (Required for Transcript Fetching):**
 
