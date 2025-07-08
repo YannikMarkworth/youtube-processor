@@ -18,6 +18,8 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 print(f"[CONFIG_DEBUG] Raw YOUTUBE_API_KEY from .env: {'Exists' if YOUTUBE_API_KEY else 'Not Found'}")
 print(f"[CONFIG_DEBUG] Raw OPENAI_API_KEY from .env: {'Exists' if OPENAI_API_KEY else 'Not Found'}")
+PROXY_USERNAME = os.getenv("PROXY_USERNAME")
+PROXY_PASSWORD = os.getenv("PROXY_PASSWORD")
 
 
 # --- AI Model Configuration ---

@@ -10,6 +10,7 @@ import youtube_utils
 import transcript_utils
 import file_utils
 import ai_utils
+import time
 
 SUMMARIES_LOG_FOR_CURRENT_RUN = []
 
@@ -246,6 +247,8 @@ def process_playlist(playlist_url):
         else:
             logging.error(f"FAILURE: Could not create summary file at {summary_filepath}.")
             failed_to_create_files_count += 1
+        # Add a cooldown period to avoid being rate-limited
+        time.sleep(5) # Pause for 5 seconds
 
     logging.info(f"--- Processing finished for playlist '{raw_playlist_title}' ---")
     logging.info(f"Stats: Total: {total_videos}, Processed (files created): {processed_count}, Skipped (already exists): {skipped_count}, Failed (file creation issue): {failed_to_create_files_count}")
