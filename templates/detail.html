@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ video.title }} – YouTube Processor{% endblock %}
+
+{% block header_right %}
+<a href="/" style="color: var(--text-muted); font-size: 0.9rem;">Alle Videos</a>
+{% endblock %}
+
+{% block content %}
+<a href="/" class="back-link">&larr; Zurück zur Liste</a>
+
+<div class="detail-header">
+    <div class="detail-title">{{ video.title }}</div>
+
+    <div class="detail-meta">
+        <span><strong>Kanal:</strong> {{ video.channel }}</span>
+        <span><strong>Playlist:</strong> {{ video.playlist }}</span>
+        {% if video.uploaded %}
+        <span><strong>Upload:</strong> {{ video.uploaded }}</span>
+        {% endif %}
+        {% if video.duration %}
+        <span><strong>Dauer:</strong> {{ video.duration }}</span>
+        {% endif %}
+        {% if video.language %}
+        <span><strong>Sprache:</strong> {{ video.language }}</span>
+        {% endif %}
+        {% if video.difficulty %}
+        <span><strong>Schwierigkeit:</strong> {{ video.difficulty }}</span>
+        {% endif %}
+    </div>
+
+    {% if video.category or video.tags %}
+    <div class="detail-tags">
+        {% if video.category %}
+        <span class="tag tag-category">{{ video.category }}</span>
+        {% endif %}
+        {% for tag in video.tags %}
+        <span class="tag">{{ tag }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if video.tldr %}
+    <div class="detail-tldr">{{ video.tldr }}</div>
+    {% endif %}
+
+    {% if video.video_url and video.video_url != "N/A" %}
+    <a href="{{ video.video_url }}" target="_blank" rel="noopener" class="yt-link">
+        Auf YouTube ansehen
+    </a>
+    {% endif %}
+</div>
+
+<div class="detail-body">
+    {{ video.body | markdown }}
+</div>
+{% endblock %}
