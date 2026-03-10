@@ -2,6 +2,7 @@ import config
 import logging
 import re
 import yaml
+from datetime import datetime
 from pathlib import Path
 
 # --- Filename Handling ---
@@ -127,42 +128,73 @@ def create_transcript_file(video_details, transcript, transcript_filepath):
         print(f"Error writing transcript file {transcript_filepath.name}: {e}")
         return False
 
-def create_summary_file(video_details, summary, summary_filepath, transcript_filename_component, display_playlist_name="N/A"):
+def create_summary_file(video_details, summary, summary_filepath, transcript_filename_component, display_playlist_name="N/A", ai_metadata=None):
     """
-    Creates or overwrites the summary Markdown file.
+    Creates or overwrites the summary Markdown file with YAML frontmatter.
     The summary_filepath should include the playlist subfolder.
-    transcript_filename_component is the actual filename of the transcript (e.g., "Playlist – Title – ID.md" or just "Playlist – Title – ID").
+    transcript_filename_component is the actual filename of the transcript.
+    ai_metadata is an optional dict with keys like tldr, category, tags, difficulty, language.
     """
     if not video_details or summary is None:
         logging.error("Cannot create summary file: Missing video_details or summary is None.")
         return False
     summary_filepath = Path(summary_filepath)
-    # Ensure transcript_filename_component does not end with .md for the link
     link_target_transcript_name = transcript_filename_component.removesuffix('.md')
+    if ai_metadata is None:
+        ai_metadata = {}
 
     try:
         logging.info(f"Writing summary file: {summary_filepath}")
         print(f"Saving summary file: {summary_filepath.relative_to(config.OUTPUT_DIR)}")
-        # Ensure the subfolder exists
         summary_filepath.parent.mkdir(parents=True, exist_ok=True)
+
+        channel_title = video_details.get('channelTitle', 'N/A')
+
+        # Build YAML frontmatter metadata
+        frontmatter = {
+            "title": video_details.get("title", "Untitled Video"),
+            "video_id": video_details.get("videoId", "N/A"),
+            "video_url": video_details.get("videoUrl", "N/A"),
+            "channel": channel_title,
+            "channel_id": video_details.get("channelId", "N/A"),
+            "uploaded": video_details.get("publishedAt", "N/A"),
+            "duration": video_details.get("duration", "N/A"),
+            "playlist": display_playlist_name,
+        }
+
+        # Add AI-generated metadata if available
+        if ai_metadata.get("tldr"):
+            frontmatter["tldr"] = ai_metadata["tldr"]
+        if ai_metadata.get("category"):
+            frontmatter["category"] = ai_metadata["category"]
+        if ai_metadata.get("tags"):
+            frontmatter["tags"] = ai_metadata["tags"]
+        if ai_metadata.get("difficulty"):
+            frontmatter["difficulty"] = ai_metadata["difficulty"]
+        if ai_metadata.get("language"):
+            frontmatter["language"] = ai_metadata["language"]
+
+        frontmatter["processed_date"] = datetime.now().strftime("%Y-%m-%d")
+
         with open(summary_filepath, "w", encoding="utf-8") as f:
-            f.write(f"{video_details.get('videoUrl', 'N/A')}\n\n") 
-            f.write(f"**Title:** {video_details.get('title', 'Untitled Video')}\n\n")
-            f.write(f"**Video URL:** {video_details.get('videoUrl', 'N/A')}\n")
-            channel_title = video_details.get('channelTitle', 'N/A')
+            # Write YAML frontmatter
+            f.write("---\n")
+            yaml.dump(frontmatter, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            f.write("---\n\n")
+
+            # Write Obsidian wiki links for navigation
             f.write(f"**Channel:** [[▶️ {channel_title}]]\n")
-            f.write(f"**Uploaded:** {video_details.get('publishedAt', 'N/A')}\n")
-            f.write(f"**Duration:** {video_details.get('duration', 'N/A')}\n")
-            # Use display_playlist_name (rawer version) for the link content
             f.write(f"**Playlist:** [[Playlist {display_playlist_name}]]\n\n")
+
+            # Write the summary content
             f.write("## AI Summary\n\n")
             f.write(summary if summary.strip() else "*Summary could not be generated or was empty.*")
-            f.write("\n\n") 
+            f.write("\n\n")
+
+            # Write transcript link
             f.write("## Transcript\n\n")
-            # The link target is just the name of the transcript file.
-            # Obsidian should find it if it's in ../transcripts/PLAYLIST_FOLDER/
-            # or if names are unique enough within the vault.
             f.write(f"[[{link_target_transcript_name}]]\n")
+
         logging.info(f"Successfully wrote summary file: {summary_filepath}")
         return True
     except Exception as e:
