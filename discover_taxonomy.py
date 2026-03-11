@@ -134,7 +134,7 @@ def _call_openai(prompt, purpose):
             model=config.OPENAI_MODEL_NAME,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3,
-            max_tokens=4000
+            max_tokens=16000
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
@@ -149,7 +149,7 @@ def _call_gemini(prompt, purpose, json_mode=False):
     try:
         client = genai.Client(api_key=config.GEMINI_API_KEY)
         gen_config = {
-            "max_output_tokens": 4000,
+            "max_output_tokens": 16000,
             "temperature": 0.3,
         }
         if json_mode:
@@ -238,7 +238,7 @@ def format_batch_for_prompt(batch):
 
 
 def parse_batch_response(response):
-    """Parses the JSON array from the AI response."""
+    """Parses the JSON array from the AI response, recovering truncated JSON."""
     if not response:
         return []
 
@@ -246,18 +246,37 @@ def parse_batch_response(response):
     cleaned = re.sub(r'```(?:json)?\s*\n?', '', response)
     cleaned = cleaned.replace('```', '')
 
-    # Try to find JSON array in the cleaned response
+    # Try to find a complete JSON array first
     json_match = re.search(r'\[.*\]', cleaned, re.DOTALL)
-    if not json_match:
+    if json_match:
+        try:
+            data = json.loads(json_match.group())
+            return data
+        except json.JSONDecodeError:
+            pass
+
+    # Fallback: try to recover truncated JSON (response cut off before closing ])
+    array_start = cleaned.find('[')
+    if array_start == -1:
         print("  Warning: Could not find JSON array in response.")
         print(f"  Response preview: {response[:500]}")
         return []
 
+    truncated = cleaned[array_start:]
+    # Find the last complete object (ending with })
+    last_brace = truncated.rfind('}')
+    if last_brace == -1:
+        print("  Warning: No complete JSON objects found in truncated response.")
+        return []
+
+    # Take everything up to and including the last complete }, then close the array
+    partial = truncated[:last_brace + 1] + ']'
     try:
-        data = json.loads(json_match.group())
+        data = json.loads(partial)
+        print(f"  (Recovered {len(data)} items from truncated response)")
         return data
     except json.JSONDecodeError as e:
-        print(f"  Warning: Failed to parse JSON: {e}")
+        print(f"  Warning: Failed to parse JSON (even with recovery): {e}")
         print(f"  Response preview: {response[:500]}")
         return []
 
