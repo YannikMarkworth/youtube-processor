@@ -231,6 +231,11 @@ For each video, assign the MOST SPECIFIC matching category from the taxonomy abo
 Use the EXACT category path string from the list — do not invent new categories.
 If no category fits well, use the closest parent category.
 
+DISAMBIGUATION RULES (use these when a video touches multiple categories):
+1. Purpose over Tool: Ask "What is the end goal?" A video about Obsidian FOR D&D prep → Tabletop RPGs > Spielleiter. A video about ComfyUI for generating film images → Technologie, KI & Personal Knowledge Management > Künstliche Intelligenz (KI) > Media Creation.
+2. Creating vs. Consuming: If someone analyzes a Game of Thrones character to teach YOU how to write better characters → Storytelling & Creative Writing. If it's a lore deep-dive to understand the show → Entertainment & Filmanalyse.
+3. One folder only: Each video gets exactly ONE category. Use the most specific matching level.
+
 Respond with a JSON array. Each entry must have "title" and "category" keys.
 The "category" value must be copied exactly from the taxonomy list above.
 

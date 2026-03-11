@@ -1,79 +1,87 @@
-Pen & Paper / TTRPGs
-  Spielleiter (DM) - Vorbereitung & Worldbuilding
-    Session Prep & Tools
+Tabletop RPGs (Fokus: D&D & Daggerheart)
+  Spielleiter (DM / GM Handwerk)
     Worldbuilding & Lore
-    Encounter & Monster Design
-    Narrative & Pacing
-  Spieler (Player) - Charakterbau & Roleplay
-    Character Builds & Optimierung
-    Roleplay & Psychologie
-    Taktik & Teamplay
-  TTRPG Game Design & Regelwerke
-    System-Analysen
-    Homebrew & House Rules
-  Actual Play & Community
-    Shows & Actual Plays
-    TTRPG Hardware & Props
+    Encounter & Combat Design
+    Narrative & Storytelling
+    Prep & Tools
+  Spieler (Player Handwerk)
+    Character Builds & Mechanik
+    Roleplay & Acting
+    Taktik & Etikette
+  Systeme, Regeln & Homebrew
+    Regelwerke & Updates
+    Homebrew & Hacks
+  TTRPG Culture & Shows
+    Actual Plays
+    Community & Industry
 
 Magic: The Gathering (MTG)
-  Commander / EDH
+  Commander (EDH)
     Deck Techs & Builds
-    EDH Deckbau-Theorie
-    Social Dynamics & Politics
-  MTG Arena (Standard & Brawl)
-    Meta-Analysen
-    Economy & F2P
-  Draft & Limited
-    Set Reviews & Draft-Guides
-    Limited Strategie
-  MTG Game Design & Lore
-    Color Pie Philosophy
-    Markt & Produktpolitik
+    Strategie & Politics
+  Constructed (Standard / Arena)
+    Meta Analyse & Deck Guides
+    Arena Economy
+  Limited (Draft & Sealed)
+    Drafting Strategy
+  MTG Theorie, Game Design & Kultur
+    Game Design
+    Community
 
-Content Creation, Filmmaking & Fotografie
-  YouTube Strategie & Business
-    Algorithmus & Packaging
-    Creator Economy & Monetarisierung
+Content Creation & Videoproduktion
+  YouTube Strategie & Creator Business
+    Growth & Algorithmus
+    Creator Economy
   Post-Production & Editing
-    DaVinci Resolve
-    Schnitt-Techniken
-  Kamera, Gear & Production
-    Hardware & Gear
-    Cinematography & Shot-Komposition
+    Software & Schnitt
+    Color Grading & VFX
+  Filmmaking & Kamera-Gear
+    Aufnahme & Technik
 
-Storytelling, Writing & Film-Analyse
-  Writing Craft
-    Story Structure & Pacing
-    Character Design & Archetypen
-    Worldbuilding & Magiesysteme
-  Media & Film-Analyse
-    Deep Dives & Video Essays
-    Trope-Kritik & Bad Writing
+Storytelling & Creative Writing
+  Schreibhandwerk (Crafting)
+    Plot & Struktur
+    Charakterentwicklung
+    Worldbuilding
+  Produktivität für Autoren
+    Schreibblockaden lösen
+    Publishing
+    Research-Methoden
 
-Tech, AI & Productivity
+Technologie, KI & Personal Knowledge Management
+  Künstliche Intelligenz (KI)
+    Produktivität & LLMs
+    Coding & Automatisierung
+    Media Creation
   Personal Knowledge Management (PKM)
-    Obsidian
-    Notiz- & Wissenssysteme
-  KI in der Praxis
-    Text & Struktur (ChatGPT, Claude, NotebookLM)
-    Visuals & Video (ComfyUI, Midjourney, Runway)
-  AI Trends & Ethik
+    Obsidian & Notizen
+  Tech-Kultur & Hardware
+    Gadgets & IT
 
-Psychologie, Gesellschaft & Self-Improvement
-  Neurodiversitaet & Mental Health
+Psychologie, Persönlichkeit & Soziales
+  Neurodiversität & Mental Health
     ADHS & Autismus
-    Emotionales Management
-  Soziale Dynamiken & Kommunikation
-    Beziehungen & Dating
-    Rhetorik & Manipulation
-  Zeitgeschehen & Politik
-    Politik (US & DE)
-    Soziologie & Generationskonflikte
+    Mental Health
+  Soziale Skills & Kommunikation
+    Interaktion
+    Dating & Beziehungen
+  Mindset & Habit-Building
+    Lebensführung
 
-Finanzen & Business
-  Investieren & Wirtschaft
-    ETFs & Boerse
-    Immobilien & Inflation
-  Business Operations
-    Systeme & SOPs
-    Freelancing & Marketing
+Wirtschaft, Finanzen & Business
+  Personal Finance & Investing
+  Business Strategy & Marketing
+  Makroökonomie
+
+Politik, Gesellschaft & Wissenschaft
+  Politik & Geopolitik (DE / US / Global)
+  Internet- & Popkultur (Gesellschaftskritik)
+  Wissenschaft & Geschichte
+
+Erziehung (Parenting)
+  Kinderpsychologie & Erziehungsmethoden
+  Familienalltag & Dynamiken
+
+Entertainment & Filmanalyse
+  Media Analysis (Video Essays)
+  Comedy & Sketche
