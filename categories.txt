@@ -1,0 +1,71 @@
+Here is a clean, unified taxonomy based on the provided raw categories:
+
+**Main Categories:**
+
+*   Artificial Intelligence
+    *   AI Tools & Applications
+    *   AI Development & Research
+    *   AI Ethics & Society
+*   Business & Career
+    *   Entrepreneurship & Strategy
+    *   Marketing & Sales
+    *   Management & Operations
+    *   Career Development
+*   Content Creation
+    *   Platform Strategy & Growth
+    *   Production & Editing
+    *   Creator Economy
+*   DIY & Home
+    *   Home Improvement & Decor
+    *   Crafts & Projects
+*   Entertainment
+    *   Comedy & Humor
+    *   Film & TV
+    *   Music
+    *   Challenges & Games
+    *   Pop Culture
+*   Finance
+    *   Personal Finance
+    *   Economics & Markets
+*   Gaming
+    *   Tabletop RPGs
+    *   Card Games
+    *   Video Games
+*   Health & Fitness
+    *   Mental Health & Well-being
+    *   Physical Health & Exercise
+    *   Nutrition
+*   Lifestyle
+    *   Daily Life & Vlogs
+    *   Hobbies & Interests
+    *   Travel
+    *   Food & Cooking
+*   Parenting & Family
+*   Politics & Society
+    *   National & International Politics
+    *   Social Issues & Commentary
+    *   History & Culture
+*   Psychology & Human Behavior
+    *   Cognitive Psychology
+    *   Social Psychology
+    *   Neurodiversity
+*   Relationships & Social Dynamics
+    *   Dating & Romance
+    *   Friendship & Family Dynamics
+    *   Shared Living
+    *   Communication & Social Skills
+*   Science & Education
+    *   Natural Sciences
+    *   Academic & Learning
+*   Self-Improvement & Personal Growth
+    *   Mindset & Motivation
+    *   Productivity & Habits
+    *   Emotional Intelligence
+*   Technology
+    *   Software & Digital Tools
+    *   Hardware & Gadgets
+    *   Internet & Trends
+*   Writing & Creative Arts
+    *   Writing Craft & Storytelling
+    *   Literary Analysis
+    *   Visual & Performing Arts
