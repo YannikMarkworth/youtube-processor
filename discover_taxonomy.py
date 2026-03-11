@@ -172,9 +172,10 @@ def _call_gemini(prompt, purpose, json_mode=False):
 BATCH_PROMPT_TEMPLATE = """Analyze these video summaries and suggest hierarchical categories for each one.
 
 For each video, assign:
-1. A hierarchical CATEGORY using " > " as separator (e.g. "Science > Physics", "Gaming > MTG", "Finance > ETFs")
-2. Keep categories broad enough to be reusable (don't make them too specific)
-3. Use 1-2 levels of hierarchy maximum
+1. A hierarchical CATEGORY using " > " as separator (e.g. "Gaming > MTG > Deckbuilding", "Gaming > D&D > DM Tips", "Finance > ETFs")
+2. Be SPECIFIC — use 2-3 levels of hierarchy to capture what the video is actually about
+3. For niche topics (MTG, D&D, specific games, etc.), include the specific sub-topic (e.g. "Commander", "Draft", "Character Creation", "DM Tips")
+4. Use consistent naming — e.g. always "MTG" not "Magic: The Gathering", always "D&D" not "Dungeons & Dragons"
 
 Videos to categorize:
 
@@ -193,24 +194,29 @@ AGGREGATION_PROMPT_TEMPLATE = """Here are category assignments from analyzing {t
 Your job is to create a clean, unified taxonomy from these raw categories.
 
 Rules:
-- Merge similar/overlapping categories (e.g. "Tech > AI" and "Technology > Artificial Intelligence" → pick one)
-- Keep 1-2 levels of hierarchy (Main Category > Subcategory)
-- Subcategories are optional — only add them if there are clearly distinct sub-topics
-- Aim for 10-25 top-level categories
-- Use German for category names if most videos are German, English otherwise
+- Merge similar/overlapping categories into ONE consistent name (e.g. "MTG Deck Building" and "MTG Deckbuilding" → "MTG > Deckbuilding")
+- Use up to 3 levels of hierarchy (Main > Sub > Detail), e.g. "Gaming > MTG > Deckbuilding"
+- PRESERVE specific sub-topics that have significant counts (5+). Do NOT collapse them into generic parents.
+  For example, keep "Gaming > MTG > Commander", "Gaming > MTG > Draft", "Gaming > MTG > Deckbuilding" as separate entries — do NOT merge them all into just "Gaming > Card Games"
+- Aim for 10-20 top-level categories, but allow as many sub-categories as needed for accuracy
+- Use English for category names
 - Categories should be intuitive and consistent
+- Low-count categories (1-2 occurrences) can be merged into a broader parent
 
 Raw category data (category: count):
 {category_counts}
 
 Output the final taxonomy as a simple list, one category per line. Use " > " for hierarchy.
 Example:
-Wissenschaft > Physik
-Wissenschaft > Biologie
-Gaming > MTG
-Gaming > D&D
-Fitness
-Produktivität
+Gaming > MTG > Deckbuilding
+Gaming > MTG > Commander
+Gaming > MTG > Draft Strategy
+Gaming > MTG > Gameplay
+Gaming > D&D > DM Tips
+Gaming > D&D > Character Creation
+Content Creation > YouTube Strategy
+Science > Physics
+Productivity
 
 Only output the category list, no other text."""
 
