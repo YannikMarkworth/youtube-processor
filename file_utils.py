@@ -5,6 +5,33 @@ import yaml
 from datetime import datetime
 from pathlib import Path
 
+
+def format_iso_date(date_str):
+    """Converts '2024-01-15T12:30:00Z' to '2024-01-15'. Passes through already-clean dates."""
+    if not date_str or date_str == "N/A":
+        return date_str
+    if re.match(r'^\d{4}-\d{2}-\d{2}$', date_str):
+        return date_str
+    m = re.match(r'^(\d{4}-\d{2}-\d{2})', date_str)
+    return m.group(1) if m else date_str
+
+
+def format_iso_duration(duration_str):
+    """Converts 'PT1H23M45S' to '1:23:45' or 'PT11M58S' to '11:58'. Passes through already-clean values."""
+    if not duration_str or duration_str == "N/A":
+        return duration_str
+    if re.match(r'^\d+:\d{2}(:\d{2})?$', duration_str):
+        return duration_str
+    m = re.match(r'^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$', duration_str)
+    if not m:
+        return duration_str
+    hours = int(m.group(1) or 0)
+    minutes = int(m.group(2) or 0)
+    seconds = int(m.group(3) or 0)
+    if hours > 0:
+        return f"{hours}:{minutes:02d}:{seconds:02d}"
+    return f"{minutes}:{seconds:02d}"
+
 # --- Filename Handling ---
 
 def clean_filename(name_part): # Renamed 'title' to 'name_part' for generic use
@@ -157,8 +184,8 @@ def create_summary_file(video_details, summary, summary_filepath, transcript_fil
             "video_url": video_details.get("videoUrl", "N/A"),
             "channel": channel_title,
             "channel_id": video_details.get("channelId", "N/A"),
-            "uploaded": video_details.get("publishedAt", "N/A"),
-            "duration": video_details.get("duration", "N/A"),
+            "uploaded": format_iso_date(video_details.get("publishedAt", "N/A")),
+            "duration": format_iso_duration(video_details.get("duration", "N/A")),
             "playlist": display_playlist_name,
         }
 
@@ -166,7 +193,11 @@ def create_summary_file(video_details, summary, summary_filepath, transcript_fil
         if ai_metadata.get("tldr"):
             frontmatter["tldr"] = ai_metadata["tldr"]
         if ai_metadata.get("category"):
-            frontmatter["category"] = ai_metadata["category"]
+            # Split "A > B > C" into separate fields for Obsidian Bases
+            parts = [p.strip() for p in ai_metadata["category"].split(" > ")]
+            frontmatter["category"] = parts[0] if len(parts) > 0 else ""
+            frontmatter["subcategory"] = parts[1] if len(parts) > 1 else ""
+            frontmatter["topic"] = parts[2] if len(parts) > 2 else ""
         if ai_metadata.get("tags"):
             frontmatter["tags"] = ai_metadata["tags"]
         if ai_metadata.get("difficulty"):

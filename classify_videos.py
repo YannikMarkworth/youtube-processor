@@ -26,6 +26,51 @@ from pathlib import Path
 import yaml
 import config
 
+
+# ==============================================================================
+# --- FORMAT HELPERS ---
+# ==============================================================================
+
+def split_category_path(category_path):
+    """Splits 'A > B > C' into {'category': 'A', 'subcategory': 'B', 'topic': 'C'}."""
+    parts = [p.strip() for p in category_path.split(" > ")]
+    return {
+        "category": parts[0] if len(parts) > 0 else "",
+        "subcategory": parts[1] if len(parts) > 1 else "",
+        "topic": parts[2] if len(parts) > 2 else "",
+    }
+
+
+def format_iso_date(date_str):
+    """Converts '2024-01-15T12:30:00Z' to '2024-01-15'. Passes through already-clean dates."""
+    if not date_str or date_str == "N/A":
+        return date_str
+    # Already in YYYY-MM-DD format
+    if re.match(r'^\d{4}-\d{2}-\d{2}$', date_str):
+        return date_str
+    # ISO 8601 timestamp — take just the date part
+    m = re.match(r'^(\d{4}-\d{2}-\d{2})', date_str)
+    return m.group(1) if m else date_str
+
+
+def format_iso_duration(duration_str):
+    """Converts 'PT1H23M45S' to '1:23:45' or 'PT11M58S' to '11:58'. Passes through already-clean values."""
+    if not duration_str or duration_str == "N/A":
+        return duration_str
+    # Already in MM:SS or H:MM:SS format
+    if re.match(r'^\d+:\d{2}(:\d{2})?$', duration_str):
+        return duration_str
+    # ISO 8601 duration
+    m = re.match(r'^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$', duration_str)
+    if not m:
+        return duration_str
+    hours = int(m.group(1) or 0)
+    minutes = int(m.group(2) or 0)
+    seconds = int(m.group(3) or 0)
+    if hours > 0:
+        return f"{hours}:{minutes:02d}:{seconds:02d}"
+    return f"{minutes}:{seconds:02d}"
+
 # --- Conditional AI imports (same pattern as ai_utils.py) ---
 if config.AI_PROVIDER == 'openai':
     import openai
@@ -339,10 +384,17 @@ def convert_old_format_and_set_category(filepath, content, category):
     channel = re.sub(r'\[\[▶️\s*|\]\]', '', channel_raw).strip()
     playlist = re.sub(r'\[\[Playlist\s*|\]\]', '', playlist_raw).strip()
 
+    # Split category into 3 levels
+    cat_parts = split_category_path(category)
+
     # Build frontmatter
     fm = {"title": title, "video_id": video_id, "video_url": video_url,
-          "channel": channel, "uploaded": uploaded, "duration": duration,
-          "playlist": playlist, "category": category}
+          "channel": channel, "uploaded": format_iso_date(uploaded),
+          "duration": format_iso_duration(duration),
+          "playlist": playlist,
+          "category": cat_parts["category"],
+          "subcategory": cat_parts["subcategory"],
+          "topic": cat_parts["topic"]}
 
     # Prepend YAML frontmatter to existing content (keep everything as-is)
     new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
@@ -378,7 +430,17 @@ def update_frontmatter_category(filepath, category):
         print(f"  Error parsing YAML in {filepath.name}: {e}")
         return False
 
-    fm["category"] = category
+    # Split category into 3 levels
+    cat_parts = split_category_path(category)
+    fm["category"] = cat_parts["category"]
+    fm["subcategory"] = cat_parts["subcategory"]
+    fm["topic"] = cat_parts["topic"]
+
+    # Normalize date and duration formats while we're at it
+    if "uploaded" in fm:
+        fm["uploaded"] = format_iso_date(str(fm["uploaded"]))
+    if "duration" in fm:
+        fm["duration"] = format_iso_duration(str(fm["duration"]))
 
     # Rebuild file
     new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
