@@ -369,6 +369,8 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Preview without making API calls")
     parser.add_argument("--limit", type=int, default=None, help="Only process first N files")
     parser.add_argument("--batch-size", type=int, default=50, help="Videos per API batch (default: 50)")
+    parser.add_argument("--reaggregate", action="store_true",
+                        help="Skip batch processing and re-run only the aggregation step using existing taxonomy_raw_categories.json")
     args = parser.parse_args()
 
     print("=" * 60)
@@ -377,14 +379,44 @@ def main():
     print(f"Summaries Dir: {config.SUMMARIES_DIR}")
     print("=" * 60)
 
-    # Step 1: Scan files
-    summaries = scan_summary_files(config.SUMMARIES_DIR, limit=args.limit)
-    if not summaries:
-        print("No summary files found. Nothing to do.")
-        sys.exit(0)
+    if args.reaggregate:
+        # Re-aggregate from existing raw categories
+        raw_path = config.BASE_DIR / "taxonomy_raw_categories.json"
+        if not raw_path.exists():
+            print(f"Error: {raw_path} not found. Run full discovery first.")
+            sys.exit(1)
 
-    # Step 2: Run discovery
-    taxonomy = run_discovery(summaries, args.batch_size, dry_run=args.dry_run)
+        with open(raw_path, "r", encoding="utf-8") as f:
+            all_categories = json.load(f)
+        print(f"\nLoaded {len(all_categories)} raw category assignments from {raw_path}")
+
+        # Count and aggregate
+        category_counts = {}
+        for item in all_categories:
+            cat = item.get("category", "Unknown")
+            category_counts[cat] = category_counts.get(cat, 0) + 1
+        sorted_cats = sorted(category_counts.items(), key=lambda x: x[1], reverse=True)
+        print(f"Found {len(sorted_cats)} unique categories.")
+
+        print("\nAggregating into clean taxonomy...")
+        category_counts_text = "\n".join(f"{cat}: {count}" for cat, count in sorted_cats)
+        agg_prompt = AGGREGATION_PROMPT_TEMPLATE.format(
+            total_videos=len(all_categories),
+            category_counts=category_counts_text
+        )
+        taxonomy = call_ai(agg_prompt, "taxonomy aggregation")
+        if not taxonomy:
+            print("Error: Aggregation failed.")
+            sys.exit(1)
+    else:
+        # Step 1: Scan files
+        summaries = scan_summary_files(config.SUMMARIES_DIR, limit=args.limit)
+        if not summaries:
+            print("No summary files found. Nothing to do.")
+            sys.exit(0)
+
+        # Step 2: Run discovery
+        taxonomy = run_discovery(summaries, args.batch_size, dry_run=args.dry_run)
 
     if taxonomy is None:
         sys.exit(0)
