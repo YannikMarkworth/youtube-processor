@@ -241,8 +241,8 @@ The "category" value must be copied exactly from the taxonomy list above.
 
 Example:
 [
-  {{"title": "Video Title 1", "category": "Tech, AI & Productivity > KI in der Praxis > Text & Struktur (ChatGPT, Claude, NotebookLM)"}},
-  {{"title": "Video Title 2", "category": "Magic: The Gathering (MTG) > Commander / EDH > Deck Techs & Builds"}}
+  {{"title": "Video Title 1", "category": "Technologie, KI & Personal Knowledge Management > Künstliche Intelligenz (KI) > Produktivität & LLMs"}},
+  {{"title": "Video Title 2", "category": "Magic: The Gathering (MTG) > Commander (EDH) > Deck Techs & Builds"}}
 ]
 
 Only output the JSON array, no other text."""
@@ -318,6 +318,49 @@ def match_title_to_file(title, batch):
 # --- FRONTMATTER UPDATE ---
 # ==============================================================================
 
+def convert_old_format_and_set_category(filepath, content, category):
+    """Converts old inline-metadata format to YAML frontmatter and sets category."""
+    def extract_inline(key, text):
+        m = re.search(rf'\*\*{key}:\*\*\s*(.+)', text)
+        return m.group(1).strip() if m else ""
+
+    title = extract_inline("Title", content) or "Unknown"
+    video_url = extract_inline("Video URL", content)
+    channel_raw = extract_inline("Channel", content)
+    uploaded = extract_inline("Uploaded", content)
+    duration = extract_inline("Duration", content)
+    playlist_raw = extract_inline("Playlist", content)
+
+    # Extract video_id from URL
+    vid_match = re.search(r'[?&]v=([a-zA-Z0-9_-]{11})', video_url or "")
+    video_id = vid_match.group(1) if vid_match else ""
+
+    # Clean wiki link markers for YAML values
+    channel = re.sub(r'\[\[▶️\s*|\]\]', '', channel_raw).strip()
+    playlist = re.sub(r'\[\[Playlist\s*|\]\]', '', playlist_raw).strip()
+
+    # Build frontmatter
+    fm = {"title": title, "video_id": video_id, "video_url": video_url,
+          "channel": channel, "uploaded": uploaded, "duration": duration,
+          "playlist": playlist, "category": category}
+
+    # Build body: keep everything from **Channel:** onward (wiki links + AI Summary + Transcript)
+    body_match = re.search(r'(\*\*Channel:\*\*.*)', content, re.DOTALL)
+    body = body_match.group(1) if body_match else content
+
+    # Write converted file
+    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    new_content = f"---\n{new_yaml}---\n\n{body}"
+
+    try:
+        filepath.write_text(new_content, encoding="utf-8")
+        print(f"  Converted old format → YAML: {filepath.name}")
+        return True
+    except Exception as e:
+        print(f"  Error writing converted file {filepath.name}: {e}")
+        return False
+
+
 def update_frontmatter_category(filepath, category):
     """Updates the 'category' field in the YAML frontmatter of a summary file."""
     filepath = Path(filepath)
@@ -329,8 +372,7 @@ def update_frontmatter_category(filepath, category):
 
     yaml_match = re.match(r'^(---\n)(.*?)(\n---)', content, re.DOTALL)
     if not yaml_match:
-        print(f"  Warning: No YAML frontmatter in {filepath.name}. Skipping.")
-        return False
+        return convert_old_format_and_set_category(filepath, content, category)
 
     try:
         fm = yaml.safe_load(yaml_match.group(2))
