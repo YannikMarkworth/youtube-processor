@@ -1,71 +1,79 @@
-Here is a clean, unified taxonomy based on the provided raw categories:
+Pen & Paper / TTRPGs
+  Spielleiter (DM) - Vorbereitung & Worldbuilding
+    Session Prep & Tools
+    Worldbuilding & Lore
+    Encounter & Monster Design
+    Narrative & Pacing
+  Spieler (Player) - Charakterbau & Roleplay
+    Character Builds & Optimierung
+    Roleplay & Psychologie
+    Taktik & Teamplay
+  TTRPG Game Design & Regelwerke
+    System-Analysen
+    Homebrew & House Rules
+  Actual Play & Community
+    Shows & Actual Plays
+    TTRPG Hardware & Props
 
-**Main Categories:**
+Magic: The Gathering (MTG)
+  Commander / EDH
+    Deck Techs & Builds
+    EDH Deckbau-Theorie
+    Social Dynamics & Politics
+  MTG Arena (Standard & Brawl)
+    Meta-Analysen
+    Economy & F2P
+  Draft & Limited
+    Set Reviews & Draft-Guides
+    Limited Strategie
+  MTG Game Design & Lore
+    Color Pie Philosophy
+    Markt & Produktpolitik
 
-*   Artificial Intelligence
-    *   AI Tools & Applications
-    *   AI Development & Research
-    *   AI Ethics & Society
-*   Business & Career
-    *   Entrepreneurship & Strategy
-    *   Marketing & Sales
-    *   Management & Operations
-    *   Career Development
-*   Content Creation
-    *   Platform Strategy & Growth
-    *   Production & Editing
-    *   Creator Economy
-*   DIY & Home
-    *   Home Improvement & Decor
-    *   Crafts & Projects
-*   Entertainment
-    *   Comedy & Humor
-    *   Film & TV
-    *   Music
-    *   Challenges & Games
-    *   Pop Culture
-*   Finance
-    *   Personal Finance
-    *   Economics & Markets
-*   Gaming
-    *   Tabletop RPGs
-    *   Card Games
-    *   Video Games
-*   Health & Fitness
-    *   Mental Health & Well-being
-    *   Physical Health & Exercise
-    *   Nutrition
-*   Lifestyle
-    *   Daily Life & Vlogs
-    *   Hobbies & Interests
-    *   Travel
-    *   Food & Cooking
-*   Parenting & Family
-*   Politics & Society
-    *   National & International Politics
-    *   Social Issues & Commentary
-    *   History & Culture
-*   Psychology & Human Behavior
-    *   Cognitive Psychology
-    *   Social Psychology
-    *   Neurodiversity
-*   Relationships & Social Dynamics
-    *   Dating & Romance
-    *   Friendship & Family Dynamics
-    *   Shared Living
-    *   Communication & Social Skills
-*   Science & Education
-    *   Natural Sciences
-    *   Academic & Learning
-*   Self-Improvement & Personal Growth
-    *   Mindset & Motivation
-    *   Productivity & Habits
-    *   Emotional Intelligence
-*   Technology
-    *   Software & Digital Tools
-    *   Hardware & Gadgets
-    *   Internet & Trends
-*   Writing & Creative Arts
-    *   Writing Craft & Storytelling
-    *   Literary Analysis
-    *   Visual & Performing Arts
+Content Creation, Filmmaking & Fotografie
+  YouTube Strategie & Business
+    Algorithmus & Packaging
+    Creator Economy & Monetarisierung
+  Post-Production & Editing
+    DaVinci Resolve
+    Schnitt-Techniken
+  Kamera, Gear & Production
+    Hardware & Gear
+    Cinematography & Shot-Komposition
+
+Storytelling, Writing & Film-Analyse
+  Writing Craft
+    Story Structure & Pacing
+    Character Design & Archetypen
+    Worldbuilding & Magiesysteme
+  Media & Film-Analyse
+    Deep Dives & Video Essays
+    Trope-Kritik & Bad Writing
+
+Tech, AI & Productivity
+  Personal Knowledge Management (PKM)
+    Obsidian
+    Notiz- & Wissenssysteme
+  KI in der Praxis
+    Text & Struktur (ChatGPT, Claude, NotebookLM)
+    Visuals & Video (ComfyUI, Midjourney, Runway)
+  AI Trends & Ethik
+
+Psychologie, Gesellschaft & Self-Improvement
+  Neurodiversitaet & Mental Health
+    ADHS & Autismus
+    Emotionales Management
+  Soziale Dynamiken & Kommunikation
+    Beziehungen & Dating
+    Rhetorik & Manipulation
+  Zeitgeschehen & Politik
+    Politik (US & DE)
+    Soziologie & Generationskonflikte
+
+Finanzen & Business
+  Investieren & Wirtschaft
+    ETFs & Boerse
+    Immobilien & Inflation
+  Business Operations
+    Systeme & SOPs
+    Freelancing & Marketing
