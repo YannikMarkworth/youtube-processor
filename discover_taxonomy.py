@@ -113,12 +113,12 @@ def extract_summary_info(filepath):
 # --- AI CALLS ---
 # ==============================================================================
 
-def call_ai(prompt, purpose="taxonomy"):
+def call_ai(prompt, purpose="taxonomy", json_mode=False):
     """Sends a prompt to the configured AI provider and returns the response."""
     if config.AI_PROVIDER == 'openai':
         return _call_openai(prompt, purpose)
     elif config.AI_PROVIDER == 'gemini':
-        return _call_gemini(prompt, purpose)
+        return _call_gemini(prompt, purpose, json_mode=json_mode)
     else:
         print(f"Error: Unsupported AI_PROVIDER '{config.AI_PROVIDER}'")
         return None
@@ -142,16 +142,22 @@ def _call_openai(prompt, purpose):
         return None
 
 
-def _call_gemini(prompt, purpose):
+def _call_gemini(prompt, purpose, json_mode=False):
     if not config.GEMINI_API_KEY:
         print("Error: Gemini API Key missing.")
         return None
     try:
         client = genai.Client(api_key=config.GEMINI_API_KEY)
+        gen_config = {
+            "max_output_tokens": 4000,
+            "temperature": 0.3,
+        }
+        if json_mode:
+            gen_config["response_mime_type"] = "application/json"
         response = client.models.generate_content(
             model=f"models/{config.GEMINI_MODEL_NAME}",
             contents=prompt,
-            config={"max_output_tokens": 4000, "temperature": 0.3}
+            config=gen_config,
         )
         return response.text.strip()
     except Exception as e:
@@ -236,10 +242,15 @@ def parse_batch_response(response):
     if not response:
         return []
 
-    # Try to find JSON array in the response
-    json_match = re.search(r'\[.*\]', response, re.DOTALL)
+    # Strip markdown code fences (```json ... ``` or ``` ... ```)
+    cleaned = re.sub(r'```(?:json)?\s*\n?', '', response)
+    cleaned = cleaned.replace('```', '')
+
+    # Try to find JSON array in the cleaned response
+    json_match = re.search(r'\[.*\]', cleaned, re.DOTALL)
     if not json_match:
         print("  Warning: Could not find JSON array in response.")
+        print(f"  Response preview: {response[:500]}")
         return []
 
     try:
@@ -247,6 +258,7 @@ def parse_batch_response(response):
         return data
     except json.JSONDecodeError as e:
         print(f"  Warning: Failed to parse JSON: {e}")
+        print(f"  Response preview: {response[:500]}")
         return []
 
 
@@ -277,8 +289,9 @@ def run_discovery(summaries, batch_size, dry_run=False):
         video_list = format_batch_for_prompt(batch)
         prompt = BATCH_PROMPT_TEMPLATE.format(video_list=video_list)
 
-        response = call_ai(prompt, f"batch {i} categorization")
+        response = call_ai(prompt, f"batch {i} categorization", json_mode=True)
         if response:
+            print(f"  Response preview: {response[:300]}")
             parsed = parse_batch_response(response)
             all_categories.extend(parsed)
             print(f"  Got {len(parsed)} category assignments.")
