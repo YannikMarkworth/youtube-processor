@@ -344,13 +344,9 @@ def convert_old_format_and_set_category(filepath, content, category):
           "channel": channel, "uploaded": uploaded, "duration": duration,
           "playlist": playlist, "category": category}
 
-    # Build body: keep everything from **Channel:** onward (wiki links + AI Summary + Transcript)
-    body_match = re.search(r'(\*\*Channel:\*\*.*)', content, re.DOTALL)
-    body = body_match.group(1) if body_match else content
-
-    # Write converted file
+    # Prepend YAML frontmatter to existing content (keep everything as-is)
     new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
-    new_content = f"---\n{new_yaml}---\n\n{body}"
+    new_content = f"---\n{new_yaml}---\n\n{content}"
 
     try:
         filepath.write_text(new_content, encoding="utf-8")
