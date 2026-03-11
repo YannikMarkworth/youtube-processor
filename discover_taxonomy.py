@@ -190,34 +190,27 @@ Respond with a JSON array. Each entry should have "title" and "category" keys. E
 Only output the JSON array, no other text."""
 
 
-AGGREGATION_PROMPT_TEMPLATE = """Here are category assignments from analyzing {total_videos} YouTube video summaries.
-Your job is to create a clean, unified taxonomy from these raw categories.
+AGGREGATION_PROMPT_TEMPLATE = """You are designing a category taxonomy for a YouTube video library of {total_videos} videos.
 
-Rules:
-- Merge similar/overlapping categories into ONE consistent name (e.g. "MTG Deck Building" and "MTG Deckbuilding" → "MTG > Deckbuilding")
-- Use up to 3 levels of hierarchy (Main > Sub > Detail), e.g. "Gaming > MTG > Deckbuilding"
-- PRESERVE specific sub-topics that have significant counts (5+). Do NOT collapse them into generic parents.
-  For example, keep "Gaming > MTG > Commander", "Gaming > MTG > Draft", "Gaming > MTG > Deckbuilding" as separate entries — do NOT merge them all into just "Gaming > Card Games"
-- Aim for 10-20 top-level categories, but allow as many sub-categories as needed for accuracy
+Below you see raw category labels that were auto-generated per video, with their occurrence counts.
+Your job is NOT to simply deduplicate these labels. Instead, analyze them to understand what content actually exists, and then design a taxonomy that would be genuinely useful for organizing and browsing these videos.
+
+Think about it like this: If someone were browsing this video library, what categories and sub-categories would help them find what they're looking for?
+
+Guidelines:
+- Use up to 3 levels of hierarchy (Main > Sub > Detail), using " > " as separator
+- Where a topic area has enough content to warrant it, create specific sub-categories that reflect real content differences
+  For example, if there are many MTG videos, don't just say "Gaming > Card Games" — break it down into what types of MTG content exist (deckbuilding, draft, commander, gameplay, etc.)
+- Likewise for D&D: distinguish DM tips, character creation, combat tactics, worldbuilding, etc.
+- For smaller topic areas, broader categories are fine
 - Use English for category names
-- Categories should be intuitive and consistent
-- Low-count categories (1-2 occurrences) can be merged into a broader parent
+- Use short, consistent names (e.g. always "MTG" not "Magic: The Gathering", always "D&D" not "Dungeons & Dragons")
+- The taxonomy should feel natural and useful, not mechanical
 
 Raw category data (category: count):
 {category_counts}
 
 Output the final taxonomy as a simple list, one category per line. Use " > " for hierarchy.
-Example:
-Gaming > MTG > Deckbuilding
-Gaming > MTG > Commander
-Gaming > MTG > Draft Strategy
-Gaming > MTG > Gameplay
-Gaming > D&D > DM Tips
-Gaming > D&D > Character Creation
-Content Creation > YouTube Strategy
-Science > Physics
-Productivity
-
 Only output the category list, no other text."""
 
 
