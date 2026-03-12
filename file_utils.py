@@ -213,8 +213,18 @@ def create_summary_file(video_details, summary, summary_filepath, transcript_fil
             yaml.dump(frontmatter, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
             f.write("---\n\n")
 
-            # Write Obsidian wiki links for navigation
+            # Write video info block
+            video_url = video_details.get("videoUrl", "N/A")
+            video_title = video_details.get("title", "N/A")
+            uploaded = video_details.get("publishedAt", "N/A")
+            duration = video_details.get("duration", "N/A")
+
+            f.write(f"{video_url}\n\n")
+            f.write(f"**Title:** {video_title}\n")
+            f.write(f"**Video URL:** {video_url}\n")
             f.write(f"**Channel:** [[▶️ {channel_title}]]\n")
+            f.write(f"**Uploaded:** {uploaded}\n")
+            f.write(f"**Duration:** {duration}\n")
             f.write(f"**Playlist:** [[Playlist {display_playlist_name}]]\n\n")
 
             # Write the summary content
