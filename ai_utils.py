@@ -54,7 +54,7 @@ def parse_ai_response(raw_response):
             value = parts[1].strip()
             if key == "tags":
                 # Split comma-separated tags into a list
-                metadata["tags"] = [t.strip() for t in value.split(",") if t.strip()]
+                metadata["tags"] = [t.strip().replace(" ", "-") for t in value.split(",") if t.strip()]
             else:
                 metadata[key] = value
 
