@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}YouTube Processor – Browse{% endblock %}
+
+{% block header_right %}
+<div class="header-stats">{{ shown }} von {{ total }} Videos</div>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<form class="filter-bar" method="get" action="/">
+    <input type="text" name="q" value="{{ q }}" placeholder="Suchen... (Titel, Kanal, Tags)">
+
+    <select name="playlist">
+        <option value="">Alle Playlists</option>
+        {% for p in playlists %}
+        <option value="{{ p }}" {% if p == playlist_filter %}selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+    </select>
+
+    <select name="channel">
+        <option value="">Alle Channels</option>
+        {% for c in channels %}
+        <option value="{{ c }}" {% if c == channel_filter %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+    </select>
+
+    {% if categories %}
+    <select name="category">
+        <option value="">Alle Kategorien</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if cat == category_filter %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+    </select>
+    {% endif %}
+
+    <input type="hidden" name="sort" value="{{ sort_by }}">
+    <input type="hidden" name="dir" value="{{ sort_dir }}">
+
+    <button type="submit">Filtern</button>
+    <a href="/" class="btn-reset" style="padding:10px 20px; border-radius:8px; text-align:center;">Reset</a>
+</form>
+
+<!-- Sort Bar -->
+<div class="sort-bar">
+    <span>Sortieren:</span>
+    {% set sorts = [("uploaded", "Datum"), ("title", "Titel"), ("channel", "Kanal"), ("playlist", "Playlist")] %}
+    {% for key, label in sorts %}
+        {% if sort_by == key %}
+            {% set next_dir = "asc" if sort_dir == "desc" else "desc" %}
+            <a href="?q={{ q }}&playlist={{ playlist_filter }}&channel={{ channel_filter }}&category={{ category_filter }}&sort={{ key }}&dir={{ next_dir }}" class="active">
+                {{ label }} {% if sort_dir == "desc" %}&#9660;{% else %}&#9650;{% endif %}
+            </a>
+        {% else %}
+            <a href="?q={{ q }}&playlist={{ playlist_filter }}&channel={{ channel_filter }}&category={{ category_filter }}&sort={{ key }}&dir=desc">
+                {{ label }}
+            </a>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<!-- Video List -->
+{% if videos %}
+<div class="video-list">
+    {% for v in videos %}
+    <a href="/video/{{ v.id }}" style="text-decoration:none;">
+        <div class="video-card">
+            <div class="video-info">
+                <div class="video-title">{{ v.title }}</div>
+                {% if v.tldr %}
+                <div class="video-tldr">{{ v.tldr }}</div>
+                {% endif %}
+                <div class="video-meta">
+                    <span>{{ v.channel }}</span>
+                    <span class="sep">|</span>
+                    <span>{{ v.playlist }}</span>
+                    {% if v.uploaded %}
+                    <span class="sep">|</span>
+                    <span>{{ v.uploaded }}</span>
+                    {% endif %}
+                    {% if v.duration %}
+                    <span class="sep">|</span>
+                    <span>{{ v.duration }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="video-tags">
+                {% if v.category %}
+                <span class="tag tag-category">{{ v.category }}</span>
+                {% endif %}
+                {% for tag in v.tags[:3] %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <h2>Keine Videos gefunden</h2>
+    {% if q or playlist_filter or channel_filter or category_filter %}
+    <p>Versuche andere Filter oder <a href="/">setze alle Filter zurück</a>.</p>
+    {% else %}
+    <p>Es wurden noch keine Zusammenfassungen erstellt.<br>
+    Starte zuerst <code>python main.py</code> um Videos zu verarbeiten.</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

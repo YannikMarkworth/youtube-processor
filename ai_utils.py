@@ -1,5 +1,6 @@
 import logging
 import math
+import re
 import config
 
 # --- Conditional Imports ---
@@ -14,6 +15,50 @@ else:
 
 # --- Constants ---
 CONTEXT_SAFETY_MARGIN = 500
+
+
+# ==============================================================================
+# --- METADATA PARSING ---
+# ==============================================================================
+
+def parse_ai_response(raw_response):
+    """
+    Parses the AI output into metadata and summary text.
+    Expects a :::META ... ::: block at the start, followed by the summary.
+    Returns dict: {"metadata": {...}, "summary": "..."}
+    Falls back gracefully if no META block is found.
+    """
+    if not raw_response:
+        return {"metadata": {}, "summary": ""}
+
+    # Try to find the :::META ... ::: block
+    meta_match = re.search(r':::META\s*\n(.*?)\n:::', raw_response, re.DOTALL)
+
+    if not meta_match:
+        logging.warning("No :::META block found in AI response. Using full text as summary.")
+        return {"metadata": {}, "summary": raw_response.strip()}
+
+    meta_block = meta_match.group(1)
+    # Everything after the closing ::: is the summary
+    summary_text = raw_response[meta_match.end():].strip()
+
+    metadata = {}
+    for line in meta_block.strip().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        # Split on first colon
+        parts = line.split(":", 1)
+        if len(parts) == 2:
+            key = parts[0].strip().lower()
+            value = parts[1].strip()
+            if key == "tags":
+                # Split comma-separated tags into a list
+                metadata["tags"] = [t.strip().replace(" ", "-") for t in value.split(",") if t.strip()]
+            else:
+                metadata[key] = value
+
+    return {"metadata": metadata, "summary": summary_text}
 
 # ==============================================================================
 # --- OPENAI SPECIFIC FUNCTIONS (Unchanged) ---
@@ -130,7 +175,8 @@ def _summarize_with_openai(transcript, chunk_prompt_template, final_prompt_templ
     if transcript_tokens < safe_context_threshold:
         print("Transcript fits in context. Using single-pass summarization (OpenAI)...")
         prompt = final_prompt_template.format(input_text=transcript, video_title=video_title)
-        return _call_openai_api(prompt, "single pass final summary")
+        raw = _call_openai_api(prompt, "single pass final summary")
+        return parse_ai_response(raw) if raw else None
     else:
         print(f"Transcript too long for single pass ({transcript_tokens} tokens). Chunking required (OpenAI)...")
         chunk_prompt_tokens = _count_openai_tokens(chunk_prompt_template.format(input_text="", video_title=""))
@@ -138,7 +184,7 @@ def _summarize_with_openai(transcript, chunk_prompt_template, final_prompt_templ
         
         if max_tokens_per_chunk <= 0:
             logging.error("Cannot process with OpenAI: Chunk prompt is too large.")
-            return "Content too long; chunking prompt setup is too large for the model's context."
+            return None
 
         chunks = _split_text_into_chunks_openai(transcript, max_tokens_per_chunk)
         chunk_summaries = []
@@ -160,7 +206,8 @@ def _summarize_with_openai(transcript, chunk_prompt_template, final_prompt_templ
         print("Combining chunk summaries (OpenAI)...")
         combined_summaries_text = "\n\n---\n\n".join(chunk_summaries)
         final_prompt = final_prompt_template.format(input_text=combined_summaries_text, video_title=video_title)
-        return _call_openai_api(final_prompt, "final summary combination")
+        raw = _call_openai_api(final_prompt, "final summary combination")
+        return parse_ai_response(raw) if raw else None
 
 def _summarize_with_gemini(transcript, chunk_prompt_template, final_prompt_template, video_title):
     """Handles the summarization workflow for Gemini using the new client."""
@@ -171,7 +218,8 @@ def _summarize_with_gemini(transcript, chunk_prompt_template, final_prompt_templ
     
     print("Summarizing with Gemini (single pass)...")
     prompt = final_prompt_template.format(input_text=transcript, video_title=video_title)
-    return _call_gemini_api(prompt, client, "final summary")
+    raw = _call_gemini_api(prompt, client, "final summary")
+    return parse_ai_response(raw) if raw else None
 
 # --- Prompt Loading Function (remains the same) ---
 def load_prompt(prompt_file_path):

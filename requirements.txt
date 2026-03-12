@@ -9,3 +9,5 @@ requests
 tiktoken
 dotenv
 google-genai
+flask
+markdown

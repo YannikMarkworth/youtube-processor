@@ -203,6 +203,7 @@ def process_playlist(playlist_url):
             continue
         
         summary_content = None
+        ai_metadata = {}
         is_placeholder_summary = False
 
         if not prompts_available:
@@ -215,15 +216,22 @@ def process_playlist(playlist_url):
             is_placeholder_summary = True
         else:
             logging.info(f"Generating AI summary for video ID '{video_id}'...")
-            summary_content = ai_utils.summarize_transcript(
+            result = ai_utils.summarize_transcript(
                 transcript_content, chunk_prompt_template, final_prompt_template, video_title_raw
             )
-            if summary_content is None:
+            if result is not None:
+                summary_content = result.get("summary", "")
+                ai_metadata = result.get("metadata", {})
+                if not summary_content:
+                    logging.error(f"AI summary was empty for video ID '{video_id}'.")
+                    summary_content = "AI summary generation returned empty content."
+                    is_placeholder_summary = True
+            else:
                 logging.error(f"AI summary generation failed for video ID '{video_id}'.")
                 summary_content = "AI summary generation failed. Please check AI service or logs."
                 is_placeholder_summary = True
-        
-        if file_utils.create_summary_file(video_details, summary_content, summary_filepath, filename_core_component, raw_playlist_title):
+
+        if file_utils.create_summary_file(video_details, summary_content, summary_filepath, filename_core_component, raw_playlist_title, ai_metadata):
             logging.info(f"Video {video_id} processed. Transcript and Summary files created/updated at {summary_filepath.parent}")
             processed_count += 1
             
