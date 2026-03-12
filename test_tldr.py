@@ -21,9 +21,21 @@ from classify_videos import _call_gemini, _call_openai, call_ai
 
 TLDR_PROMPT_TEMPLATE = """You are generating TLDRs for YouTube video summaries.
 
-For each video below, write a single-sentence TLDR (max 150 characters) that captures the core message.
-The TLDR should be informative and specific — avoid generic descriptions.
-Write the TLDR in the same language as the summary.
+For each video below, write a single-sentence TLDR (max 150 characters) that captures the SPECIFIC core insight or conclusion.
+
+RULES:
+- Be SPECIFIC: Include concrete details, names, numbers, or conclusions from the summary.
+- NO filler phrases: Never start with "Learn", "Discover", "Find out", "Entdecke", "Erfahre", "Lerne".
+- State the insight DIRECTLY as a fact or conclusion, not as an invitation to learn.
+- Write in the same language as the summary.
+
+BAD examples (too vague):
+- "Learn to run effective weekly team meetings by focusing on five essential elements"
+- "Entdecke, wie Googles Nano Banana beeindruckende KI-Bilder erstellt"
+
+GOOD examples (specific):
+- "Weekly team meetings work best with: wins, metrics, priorities, blockers, and action items"
+- "Gemini 2.5 Flash erzeugt fotorealistische Bilder und übertrifft Midjourney bei Text-Rendering"
 
 Respond with a JSON array where each entry has "video_id" and "tldr" keys.
 
