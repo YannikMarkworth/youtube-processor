@@ -10,7 +10,7 @@ Rules:
 
 Format each note EXACTLY like this, separated by --- on its own line:
 
-Title as a plain-language claim
+# Title as a plain-language claim (max 8 words)
 
 Two to four sentences maximum. State the principle. Say why it matters or what it unlocks.
 
@@ -20,7 +20,7 @@ Tags: #tag1 #tag2 #tag3
 
 ---
 
-Title of the next note
+# Title of the next note
 
 Body of the next note...
 
@@ -40,7 +40,7 @@ A simple list of every example, anecdote, film, person, scene, or reference used
 
 IMPORTANT FORMATTING RULES:
 - Separate each note with exactly --- on its own line.
-- The first line of each note block is the title (a plain-language claim, not a question).
+- The first line of each note block is the title, prefixed with "# ". Keep titles SHORT: max 8 words. The title is a crisp claim, not a full sentence. The body does the explaining.
 - Tags use #kebab-case (hyphens, no spaces): e.g. #decision-making, #mental-models
 - Do NOT wrap notes in code blocks, bullet lists, or numbered lists.
 - Do NOT add any preamble or closing commentary. Start directly with the first note.

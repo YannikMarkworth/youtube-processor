@@ -334,7 +334,8 @@ def parse_atomic_notes(raw_response):
                 continue
 
             if not found_title:
-                title = stripped
+                # Strip leading "# " markdown heading prefix if present
+                title = re.sub(r'^#+\s*', '', stripped)
                 found_title = True
             elif stripped.startswith("Tags:"):
                 # Parse tags: "Tags: #tag1 #tag2 #tag3"
