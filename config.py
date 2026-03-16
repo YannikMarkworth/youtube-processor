@@ -138,6 +138,7 @@ BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = Path("/Users/yannikmarkworth/Obsidian/Yannik/• YouTube-Importer") # Keep your specific path
 TRANSCRIPTS_DIR = OUTPUT_DIR / "Transcripts"
 SUMMARIES_DIR = OUTPUT_DIR / "Summaries"
+ATOMIC_NOTES_DIR = OUTPUT_DIR / "Atomic Notes"
 print(f"\n[CONFIG_DEBUG] Base Dir: {BASE_DIR}")
 print(f"[CONFIG_DEBUG] Output Dir: {OUTPUT_DIR}")
 
@@ -145,6 +146,7 @@ print(f"[CONFIG_DEBUG] Output Dir: {OUTPUT_DIR}")
 try:
     TRANSCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
     SUMMARIES_DIR.mkdir(parents=True, exist_ok=True)
+    ATOMIC_NOTES_DIR.mkdir(parents=True, exist_ok=True)
     print(f"[CONFIG_DEBUG] Output directories ensured.")
 except Exception as e:
     print(f"[CONFIG_DEBUG] ERROR creating output directories: {e}")
@@ -154,6 +156,7 @@ except Exception as e:
 PLAYLIST_URL_FILE = BASE_DIR / "playlist_url.txt"
 CHUNK_PROMPT_FILE = BASE_DIR / "summarize_chunk_prompt.txt"
 FINAL_PROMPT_FILE = BASE_DIR / "summarize_final_prompt.txt"
+ATOMIC_NOTES_PROMPT_FILE = BASE_DIR / "atomic_notes_prompt.txt"
 ERROR_LOG_FILE = BASE_DIR / "error_log.log"
 print(f"[CONFIG_DEBUG] Log file path set to: {ERROR_LOG_FILE}")
 
