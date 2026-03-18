@@ -2,108 +2,162 @@
 {% block title %}YouTube Processor – Browse{% endblock %}
 
 {% block header_right %}
-<div class="header-stats">{{ shown }} von {{ total }} Videos</div>
+<span class="header-stats">{{ shown }} von {{ total }} Videos</span>
+<button id="filter-toggle" class="header-btn">Filter &#9660;</button>
+<a href="/stats" class="header-btn">Statistiken</a>
+{% endblock %}
+
+{% block chips %}
+<div class="chips-bar">
+    <div class="chips-scroll">
+        <a href="/?sort={{ sort_by }}&dir={{ sort_dir }}"
+           class="chip {% if not category_filter %}active{% endif %}"
+           data-category="">Alle</a>
+        {% for cat in top_categories %}
+        <a href="/?category={{ cat }}&sort={{ sort_by }}&dir={{ sort_dir }}"
+           class="chip {% if category_filter == cat %}active{% endif %}"
+           data-category="{{ cat }}">{{ cat }}</a>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}
 
 {% block content %}
-<!-- Filter Bar -->
-<form class="filter-bar" method="get" action="/">
-    <input type="text" name="q" value="{{ q }}" placeholder="Suchen... (Titel, Kanal, Tags)">
 
-    <select name="playlist">
+<!-- Filter Drawer -->
+<div id="filter-drawer" class="filter-drawer">
+    <span class="filter-label">Playlist:</span>
+    <select id="filter-playlist">
         <option value="">Alle Playlists</option>
         {% for p in playlists %}
         <option value="{{ p }}" {% if p == playlist_filter %}selected{% endif %}>{{ p }}</option>
         {% endfor %}
     </select>
 
-    <select name="channel">
+    <span class="filter-label">Channel:</span>
+    <select id="filter-channel">
         <option value="">Alle Channels</option>
         {% for c in channels %}
         <option value="{{ c }}" {% if c == channel_filter %}selected{% endif %}>{{ c }}</option>
         {% endfor %}
     </select>
 
-    {% if categories %}
-    <select name="category">
-        <option value="">Alle Kategorien</option>
-        {% for cat in categories %}
-        <option value="{{ cat }}" {% if cat == category_filter %}selected{% endif %}>{{ cat }}</option>
-        {% endfor %}
+    <span class="filter-label">Sortierung:</span>
+    <select id="filter-sort" class="sort-select">
+        <option value="uploaded:desc" {% if sort_by == 'uploaded' and sort_dir == 'desc' %}selected{% endif %}>Neueste zuerst</option>
+        <option value="uploaded:asc" {% if sort_by == 'uploaded' and sort_dir == 'asc' %}selected{% endif %}>Aelteste zuerst</option>
+        <option value="title:asc" {% if sort_by == 'title' and sort_dir == 'asc' %}selected{% endif %}>Titel A-Z</option>
+        <option value="title:desc" {% if sort_by == 'title' and sort_dir == 'desc' %}selected{% endif %}>Titel Z-A</option>
+        <option value="channel:asc" {% if sort_by == 'channel' and sort_dir == 'asc' %}selected{% endif %}>Kanal A-Z</option>
+        <option value="playlist:asc" {% if sort_by == 'playlist' and sort_dir == 'asc' %}selected{% endif %}>Playlist A-Z</option>
     </select>
-    {% endif %}
 
-    <input type="hidden" name="sort" value="{{ sort_by }}">
-    <input type="hidden" name="dir" value="{{ sort_dir }}">
-
-    <button type="submit">Filtern</button>
-    <a href="/" class="btn-reset" style="padding:10px 20px; border-radius:8px; text-align:center;">Reset</a>
-</form>
-
-<!-- Sort Bar -->
-<div class="sort-bar">
-    <span>Sortieren:</span>
-    {% set sorts = [("uploaded", "Datum"), ("title", "Titel"), ("channel", "Kanal"), ("playlist", "Playlist")] %}
-    {% for key, label in sorts %}
-        {% if sort_by == key %}
-            {% set next_dir = "asc" if sort_dir == "desc" else "desc" %}
-            <a href="?q={{ q }}&playlist={{ playlist_filter }}&channel={{ channel_filter }}&category={{ category_filter }}&sort={{ key }}&dir={{ next_dir }}" class="active">
-                {{ label }} {% if sort_dir == "desc" %}&#9660;{% else %}&#9650;{% endif %}
-            </a>
-        {% else %}
-            <a href="?q={{ q }}&playlist={{ playlist_filter }}&channel={{ channel_filter }}&category={{ category_filter }}&sort={{ key }}&dir=desc">
-                {{ label }}
-            </a>
-        {% endif %}
-    {% endfor %}
+    <a href="/" class="btn-reset">Alle Filter zuruecksetzen</a>
 </div>
 
-<!-- Video List -->
-{% if videos %}
-<div class="video-list">
-    {% for v in videos %}
-    <a href="/video/{{ v.id }}" style="text-decoration:none;">
-        <div class="video-card">
-            <div class="video-info">
-                <div class="video-title">{{ v.title }}</div>
-                {% if v.tldr %}
-                <div class="video-tldr">{{ v.tldr }}</div>
+<!-- Recently Processed -->
+{% if not q and not playlist_filter and not channel_filter and not category_filter %}
+<section class="recent-section">
+    <div class="section-header">
+        <h2 class="section-title">Zuletzt verarbeitet</h2>
+    </div>
+    <div class="recent-grid">
+        {% for v in recent[:8] %}
+        <a href="/video/{{ v.id }}" class="video-card">
+            <div class="card-thumbnail">
+                {% if v.video_id %}
+                <img loading="lazy"
+                     src="https://img.youtube.com/vi/{{ v.video_id }}/mqdefault.jpg"
+                     alt=""
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 {% endif %}
-                <div class="video-meta">
-                    <span>{{ v.channel }}</span>
-                    <span class="sep">|</span>
-                    <span>{{ v.playlist }}</span>
-                    {% if v.uploaded %}
-                    <span class="sep">|</span>
-                    <span>{{ v.uploaded }}</span>
-                    {% endif %}
-                    {% if v.duration %}
-                    <span class="sep">|</span>
-                    <span>{{ v.duration }}</span>
-                    {% endif %}
+                <div class="card-thumbnail-fallback" {% if v.video_id %}style="display:none"{% endif %}>{{ v.title[0] if v.title else '?' }}</div>
+                {% if v.duration %}
+                <span class="card-duration">{{ v.duration }}</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="card-title">{{ v.title }}</div>
+                <div class="card-meta">
+                    <span class="channel-name">{{ v.channel }}</span> · {{ v.uploaded }}
                 </div>
             </div>
-            <div class="video-tags">
-                {% if v.category %}
-                <span class="tag tag-category">{{ v.category }}</span>
-                {% endif %}
-                {% for tag in v.tags[:3] %}
-                <span class="tag">{{ tag }}</span>
-                {% endfor %}
+        </a>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Random Discovery -->
+<section class="discover-section">
+    <div class="section-header">
+        <h2 class="section-title">Zufaellig entdecken</h2>
+        <button id="random-refresh" class="section-action">Neue Auswahl &#8635;</button>
+    </div>
+    <div id="random-grid" class="recent-grid">
+        <!-- Loaded via JS -->
+    </div>
+</section>
+{% endif %}
+
+<!-- Main Video Grid -->
+<div class="section-header">
+    <h2 class="section-title">
+        {% if q or playlist_filter or channel_filter or category_filter %}
+            {{ shown }} Ergebnisse
+        {% else %}
+            Alle Videos
+        {% endif %}
+    </h2>
+</div>
+
+{% if videos %}
+<div id="video-grid" class="video-grid" data-has-more="{{ 'true' if has_more else 'false' }}">
+    {% for v in videos %}
+    <a href="/video/{{ v.id }}" class="video-card">
+        <div class="card-thumbnail">
+            {% if v.video_id %}
+            <img loading="lazy"
+                 src="https://img.youtube.com/vi/{{ v.video_id }}/mqdefault.jpg"
+                 alt=""
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            {% endif %}
+            <div class="card-thumbnail-fallback" {% if v.video_id %}style="display:none"{% endif %}>{{ v.title[0] if v.title else '?' }}</div>
+            {% if v.duration %}
+            <span class="card-duration">{{ v.duration }}</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <div class="card-title">{{ v.title }}</div>
+            <div class="card-meta">
+                <span class="channel-name">{{ v.channel }}</span> · {{ v.uploaded }}
             </div>
+            {% if v.category %}
+            <span class="card-chip">{{ v.category }}</span>
+            {% endif %}
         </div>
     </a>
     {% endfor %}
 </div>
+
+<!-- Scroll Sentinel for Infinite Scroll -->
+{% if has_more %}
+<div id="scroll-sentinel" class="scroll-sentinel">
+    <div class="spinner"></div>
+</div>
+{% else %}
+<div class="load-end">Alle Videos geladen</div>
+{% endif %}
+
 {% else %}
 <div class="empty-state">
     <h2>Keine Videos gefunden</h2>
     {% if q or playlist_filter or channel_filter or category_filter %}
-    <p>Versuche andere Filter oder <a href="/">setze alle Filter zurück</a>.</p>
+    <p>Versuche andere Filter oder <a href="/">setze alle Filter zurueck</a>.</p>
     {% else %}
     <p>Es wurden noch keine Zusammenfassungen erstellt.<br>
     Starte zuerst <code>python main.py</code> um Videos zu verarbeiten.</p>
     {% endif %}
 </div>
 {% endif %}
+
 {% endblock %}

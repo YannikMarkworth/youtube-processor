@@ -2,11 +2,23 @@
 {% block title %}{{ video.title }} – YouTube Processor{% endblock %}
 
 {% block header_right %}
-<a href="/" style="color: var(--text-muted); font-size: 0.9rem;">Alle Videos</a>
+<a href="/" class="header-btn">Alle Videos</a>
 {% endblock %}
 
 {% block content %}
-<a href="/" class="back-link">&larr; Zurück zur Liste</a>
+<a href="/" class="back-link">&larr; Zurueck zur Bibliothek</a>
+
+<!-- Embedded YouTube Player -->
+{% if video.video_id and video.video_id != "N/A" %}
+<div class="detail-player">
+    <iframe
+        src="https://www.youtube-nocookie.com/embed/{{ video.video_id }}"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+        loading="lazy">
+    </iframe>
+</div>
+{% endif %}
 
 <div class="detail-header">
     <div class="detail-title">{{ video.title }}</div>
@@ -28,10 +40,16 @@
         {% endif %}
     </div>
 
-    {% if video.category or video.tags %}
+    {% if video.category or video.subcategory or video.topic or video.tags %}
     <div class="detail-tags">
         {% if video.category %}
         <span class="tag tag-category">{{ video.category }}</span>
+        {% endif %}
+        {% if video.subcategory %}
+        <span class="tag tag-category">{{ video.subcategory }}</span>
+        {% endif %}
+        {% if video.topic %}
+        <span class="tag tag-category">{{ video.topic }}</span>
         {% endif %}
         {% for tag in video.tags %}
         <span class="tag">{{ tag }}</span>
@@ -43,11 +61,13 @@
     <div class="detail-tldr">{{ video.tldr }}</div>
     {% endif %}
 
-    {% if video.video_url and video.video_url != "N/A" %}
-    <a href="{{ video.video_url }}" target="_blank" rel="noopener" class="yt-link">
-        Auf YouTube ansehen
-    </a>
-    {% endif %}
+    <div class="detail-actions">
+        {% if video.video_url and video.video_url != "N/A" %}
+        <a href="{{ video.video_url }}" target="_blank" rel="noopener" class="yt-link">
+            Auf YouTube ansehen
+        </a>
+        {% endif %}
+    </div>
 </div>
 
 <div class="detail-body">

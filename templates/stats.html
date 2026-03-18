@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Statistiken – YouTube Processor{% endblock %}
+
+{% block header_right %}
+<a href="/" class="header-btn">Zurueck zur Bibliothek</a>
+{% endblock %}
+
+{% block chips %}
+<div class="chips-bar">
+    <div class="chips-scroll">
+        <a href="/" class="chip">Alle Videos</a>
+        {% for cat in top_categories %}
+        <a href="/?category={{ cat }}" class="chip">{{ cat }}</a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="section-header" style="margin-bottom: 24px;">
+    <h2 class="section-title">Deine Bibliothek in Zahlen</h2>
+</div>
+
+<div class="stats-grid">
+
+    <!-- Total Videos -->
+    <div class="stat-card">
+        <h3>Gesamt</h3>
+        <div class="stat-number">{{ stats.total }}</div>
+        <div style="color: var(--text-muted); font-size: 0.85rem;">verarbeitete Videos</div>
+    </div>
+
+    <!-- Categories -->
+    <div class="stat-card">
+        <h3>Top Kategorien</h3>
+        <ul class="stat-bar-list">
+            {% for cat, count in stats.categories %}
+            <li class="stat-bar-item">
+                <span class="stat-bar-label"><a href="/?category={{ cat }}">{{ cat }}</a></span>
+                <div class="stat-bar-track">
+                    <div class="stat-bar-fill" style="width: {{ (count / stats.categories[0][1] * 100) | round }}%"></div>
+                </div>
+                <span class="stat-bar-count">{{ count }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Top Channels -->
+    <div class="stat-card">
+        <h3>Top Channels</h3>
+        <ul class="stat-bar-list">
+            {% for ch, count in stats.top_channels %}
+            <li class="stat-bar-item">
+                <span class="stat-bar-label"><a href="/?channel={{ ch }}">{{ ch }}</a></span>
+                <div class="stat-bar-track">
+                    <div class="stat-bar-fill" style="width: {{ (count / stats.top_channels[0][1] * 100) | round }}%"></div>
+                </div>
+                <span class="stat-bar-count">{{ count }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Languages -->
+    <div class="stat-card">
+        <h3>Sprachen</h3>
+        <ul class="stat-bar-list">
+            {% for lang, count in stats.languages %}
+            <li class="stat-bar-item">
+                <span class="stat-bar-label">{{ lang }}</span>
+                <div class="stat-bar-track">
+                    <div class="stat-bar-fill" style="width: {{ (count / stats.languages[0][1] * 100) | round }}%"></div>
+                </div>
+                <span class="stat-bar-count">{{ count }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Difficulty -->
+    <div class="stat-card">
+        <h3>Schwierigkeitsgrade</h3>
+        <ul class="stat-bar-list">
+            {% for diff, count in stats.difficulties %}
+            <li class="stat-bar-item">
+                <span class="stat-bar-label">{{ diff }}</span>
+                <div class="stat-bar-track">
+                    <div class="stat-bar-fill" style="width: {{ (count / stats.difficulties[0][1] * 100) | round }}%"></div>
+                </div>
+                <span class="stat-bar-count">{{ count }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Monthly Chart -->
+    {% if stats.per_month %}
+    <div class="stat-card" style="grid-column: span 2;">
+        <h3>Videos pro Monat (letzte 24 Monate)</h3>
+        {% set max_month = namespace(val=1) %}
+        {% for month, count in stats.per_month %}
+            {% if count > max_month.val %}
+                {% set max_month.val = count %}
+            {% endif %}
+        {% endfor %}
+        <div class="month-chart">
+            {% for month, count in stats.per_month %}
+            <div class="month-bar" style="height: {{ (count / max_month.val * 100) | round }}%">
+                <div class="month-bar-tooltip">{{ month }}: {{ count }} Videos</div>
+            </div>
+            {% endfor %}
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.75rem; color: var(--text-muted);">
+            <span>{{ stats.per_month[0][0] }}</span>
+            <span>{{ stats.per_month[-1][0] }}</span>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

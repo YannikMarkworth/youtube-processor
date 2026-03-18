@@ -4,310 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}YouTube Processor{% endblock %}</title>
-    <style>
-        :root {
-            --bg: #0f0f0f;
-            --bg-card: #1a1a1a;
-            --bg-hover: #252525;
-            --bg-input: #121212;
-            --border: #333;
-            --text: #e8e8e8;
-            --text-muted: #888;
-            --accent: #3ea6ff;
-            --accent-hover: #65b8ff;
-            --red: #ff4e45;
-            --green: #2ba640;
-            --tag-bg: #263850;
-            --tag-text: #8ab4f8;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-        }
-
-        a { color: var(--accent); text-decoration: none; }
-        a:hover { color: var(--accent-hover); }
-
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
-
-        /* Header */
-        header {
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border);
-            padding: 16px 0;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        header .container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .logo {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-        .logo span { color: var(--accent); }
-        .header-stats { color: var(--text-muted); font-size: 0.9rem; }
-
-        /* Main */
-        main { padding: 24px 0; }
-
-        /* Back link */
-        .back-link {
-            display: inline-block;
-            margin-bottom: 16px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-        .back-link:hover { color: var(--accent); }
-
-        /* Filter bar */
-        .filter-bar {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 24px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-        }
-        .filter-bar input[type="text"] {
-            flex: 1;
-            min-width: 200px;
-            padding: 10px 14px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 0.95rem;
-        }
-        .filter-bar input:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-        .filter-bar select {
-            padding: 10px 14px;
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 0.9rem;
-            min-width: 140px;
-        }
-        .filter-bar select:focus { outline: none; border-color: var(--accent); }
-        .filter-bar button {
-            padding: 10px 20px;
-            background: var(--accent);
-            color: #000;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-        .filter-bar button:hover { background: var(--accent-hover); }
-        .btn-reset {
-            background: transparent !important;
-            color: var(--text-muted) !important;
-            border: 1px solid var(--border) !important;
-        }
-        .btn-reset:hover {
-            color: var(--text) !important;
-            border-color: var(--text-muted) !important;
-        }
-
-        /* Video list */
-        .video-list { display: flex; flex-direction: column; gap: 8px; }
-
-        .video-card {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 12px;
-            align-items: center;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 16px 20px;
-            transition: background 0.15s, border-color 0.15s;
-        }
-        .video-card:hover {
-            background: var(--bg-hover);
-            border-color: var(--accent);
-        }
-
-        .video-info { min-width: 0; }
-        .video-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .video-meta {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px 16px;
-        }
-        .video-meta .sep { color: var(--border); }
-
-        .video-tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-        .tag {
-            background: var(--tag-bg);
-            color: var(--tag-text);
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 0.78rem;
-            white-space: nowrap;
-        }
-        .tag-category {
-            background: #2d3a28;
-            color: #8ecf7e;
-        }
-
-        /* TLDR badge */
-        .video-tldr {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-            font-style: italic;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* Sort controls */
-        .sort-bar {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 16px;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-        .sort-bar a {
-            color: var(--text-muted);
-            padding: 4px 10px;
-            border-radius: 6px;
-            border: 1px solid transparent;
-        }
-        .sort-bar a:hover { color: var(--text); background: var(--bg-hover); }
-        .sort-bar a.active {
-            color: var(--accent);
-            border-color: var(--accent);
-            background: var(--tag-bg);
-        }
-
-        /* Detail page */
-        .detail-header {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
-        }
-        .detail-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 12px; }
-        .detail-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px 24px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            margin-bottom: 12px;
-        }
-        .detail-meta strong { color: var(--text); }
-        .detail-tldr {
-            background: var(--bg-input);
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-style: italic;
-            color: var(--text-muted);
-            margin-top: 12px;
-        }
-
-        .detail-body {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 24px;
-            line-height: 1.8;
-        }
-        .detail-body h1, .detail-body h2, .detail-body h3 {
-            margin-top: 24px;
-            margin-bottom: 8px;
-            color: var(--accent);
-        }
-        .detail-body h2 { font-size: 1.2rem; }
-        .detail-body h3 { font-size: 1.05rem; }
-        .detail-body ul, .detail-body ol {
-            padding-left: 24px;
-            margin: 8px 0;
-        }
-        .detail-body li { margin-bottom: 4px; }
-        .detail-body p { margin-bottom: 12px; }
-        .detail-body strong { color: var(--text); }
-        .detail-body blockquote {
-            border-left: 3px solid var(--accent);
-            padding-left: 16px;
-            color: var(--text-muted);
-            margin: 12px 0;
-        }
-
-        .detail-tags { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
-
-        .yt-link {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 8px 16px;
-            background: var(--red);
-            color: #fff;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-        .yt-link:hover { opacity: 0.9; color: #fff; }
-
-        /* Empty state */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-        }
-        .empty-state h2 { margin-bottom: 8px; color: var(--text); }
-
-        /* Responsive */
-        @media (max-width: 700px) {
-            .video-card { grid-template-columns: 1fr; }
-            .video-tags { justify-content: flex-start; }
-            .filter-bar { flex-direction: column; }
-            .filter-bar input, .filter-bar select { width: 100%; }
-        }
-    </style>
+    <link rel="stylesheet" href="/static/browse.css">
 </head>
 <body>
     <header>
         <div class="container">
-            <div class="logo"><span>YT</span> Processor – Browse</div>
-            {% block header_right %}{% endblock %}
+            <a href="/" class="logo" style="text-decoration:none;"><span>YT</span> Processor</a>
+
+            {% block header_search %}
+            <div class="header-search">
+                <span class="search-icon">&#128269;</span>
+                <input type="text"
+                       id="header-search"
+                       placeholder="Suchen... (Titel, Kanal, Tags, Kategorie)"
+                       value="{{ q if q is defined else '' }}"
+                       autocomplete="off">
+            </div>
+            {% endblock %}
+
+            <div class="header-right">
+                {% block header_right %}{% endblock %}
+            </div>
         </div>
     </header>
+
+    {% block chips %}{% endblock %}
+
     <main>
         <div class="container">
             {% block content %}{% endblock %}
         </div>
     </main>
+
+    <script src="/static/browse.js" defer></script>
 </body>
 </html>
