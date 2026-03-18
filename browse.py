@@ -291,14 +291,14 @@ def apply_filters(videos, q="", playlist="", channel="", category="", subcategor
     if q:
         q_lower = q.lower()
         filtered = [v for v in filtered if
-                    q_lower in v["title"].lower() or
-                    q_lower in v["channel"].lower() or
-                    q_lower in v["tldr"].lower() or
-                    q_lower in v["playlist"].lower() or
-                    q_lower in v["category"].lower() or
-                    q_lower in v.get("subcategory", "").lower() or
-                    q_lower in v.get("topic", "").lower() or
-                    any(q_lower in str(t).lower() for t in v["tags"])]
+                    q_lower in (v.get("title") or "").lower() or
+                    q_lower in (v.get("channel") or "").lower() or
+                    q_lower in (v.get("tldr") or "").lower() or
+                    q_lower in (v.get("playlist") or "").lower() or
+                    q_lower in (v.get("category") or "").lower() or
+                    q_lower in (v.get("subcategory") or "").lower() or
+                    q_lower in (v.get("topic") or "").lower() or
+                    any(q_lower in str(t).lower() for t in (v.get("tags") or []))]
 
     if playlist:
         filtered = [v for v in filtered if v["playlist"] == playlist]

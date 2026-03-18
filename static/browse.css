@@ -492,7 +492,7 @@ header {
     line-height: 1.4;
     margin-top: 6px;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     font-style: italic;
@@ -616,11 +616,15 @@ header {
     border-radius: 20px;
     font-size: 0.78rem;
     white-space: nowrap;
+    text-decoration: none;
+    transition: opacity 0.15s;
 }
+a.tag:hover { opacity: 0.8; color: var(--tag-text); }
 .tag-category {
     background: #2d3a28;
     color: #8ecf7e;
 }
+a.tag-category:hover { color: #8ecf7e; }
 
 .detail-tldr {
     background: var(--bg-input);

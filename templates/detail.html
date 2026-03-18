@@ -6,7 +6,7 @@
 {% endblock %}
 
 {% block content %}
-<a href="/" class="back-link">&larr; Zurueck zur Bibliothek</a>
+<a href="javascript:history.back()" class="back-link">&larr; Zurueck zur Bibliothek</a>
 
 <!-- Embedded YouTube Player -->
 {% if video.video_id and video.video_id != "N/A" %}
@@ -24,8 +24,8 @@
     <div class="detail-title">{{ video.title }}</div>
 
     <div class="detail-meta">
-        <span><strong>Kanal:</strong> {{ video.channel }}</span>
-        <span><strong>Playlist:</strong> {{ video.playlist }}</span>
+        <span><strong>Kanal:</strong> <a href="/?channel={{ video.channel | urlencode }}">{{ video.channel }}</a></span>
+        <span><strong>Playlist:</strong> <a href="/?playlist={{ video.playlist | urlencode }}">{{ video.playlist }}</a></span>
         {% if video.uploaded %}
         <span><strong>Upload:</strong> {{ video.uploaded }}</span>
         {% endif %}
@@ -43,16 +43,16 @@
     {% if video.category or video.subcategory or video.topic or video.tags %}
     <div class="detail-tags">
         {% if video.category %}
-        <span class="tag tag-category">{{ video.category }}</span>
+        <a href="/?category={{ video.category | urlencode }}" class="tag tag-category">{{ video.category }}</a>
         {% endif %}
         {% if video.subcategory %}
-        <span class="tag tag-category">{{ video.subcategory }}</span>
+        <a href="/?category={{ video.category | urlencode }}&subcategory={{ video.subcategory | urlencode }}" class="tag tag-category">{{ video.subcategory }}</a>
         {% endif %}
         {% if video.topic %}
-        <span class="tag tag-category">{{ video.topic }}</span>
+        <a href="/?category={{ video.category | urlencode }}&subcategory={{ video.subcategory | urlencode }}&topic={{ video.topic | urlencode }}" class="tag tag-category">{{ video.topic }}</a>
         {% endif %}
         {% for tag in video.tags %}
-        <span class="tag">{{ tag }}</span>
+        <a href="/?q={{ tag | urlencode }}" class="tag">{{ tag }}</a>
         {% endfor %}
     </div>
     {% endif %}
