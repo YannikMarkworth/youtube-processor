@@ -247,7 +247,44 @@ def get_top_categories(videos):
     return cats
 
 
-def apply_filters(videos, q="", playlist="", channel="", category=""):
+def build_category_tree(videos):
+    """Build a nested dict of category > subcategory > topic with counts."""
+    tree = {}
+    for v in videos:
+        cat = v.get("category", "")
+        sub = v.get("subcategory", "")
+        topic = v.get("topic", "")
+        if not cat:
+            continue
+
+        if cat not in tree:
+            tree[cat] = {"count": 0, "subcategories": {}}
+        tree[cat]["count"] += 1
+
+        if sub:
+            if sub not in tree[cat]["subcategories"]:
+                tree[cat]["subcategories"][sub] = {"count": 0, "topics": {}}
+            tree[cat]["subcategories"][sub]["count"] += 1
+
+            if topic:
+                tree[cat]["subcategories"][sub]["topics"][topic] = \
+                    tree[cat]["subcategories"][sub]["topics"].get(topic, 0) + 1
+
+    # Sort alphabetically
+    sorted_tree = {}
+    for cat_name in sorted(tree.keys()):
+        cat_data = tree[cat_name]
+        sorted_subs = {}
+        for sub_name in sorted(cat_data["subcategories"].keys()):
+            sub_data = cat_data["subcategories"][sub_name]
+            sorted_topics = dict(sorted(sub_data["topics"].items()))
+            sorted_subs[sub_name] = {"count": sub_data["count"], "topics": sorted_topics}
+        sorted_tree[cat_name] = {"count": cat_data["count"], "subcategories": sorted_subs}
+
+    return sorted_tree
+
+
+def apply_filters(videos, q="", playlist="", channel="", category="", subcategory="", topic=""):
     """Apply search and filter criteria to video list."""
     filtered = videos
 
@@ -269,6 +306,10 @@ def apply_filters(videos, q="", playlist="", channel="", category=""):
         filtered = [v for v in filtered if v["channel"] == channel]
     if category:
         filtered = [v for v in filtered if v["category"] == category]
+    if subcategory:
+        filtered = [v for v in filtered if v.get("subcategory", "") == subcategory]
+    if topic:
+        filtered = [v for v in filtered if v.get("topic", "") == topic]
 
     return filtered
 
@@ -318,25 +359,44 @@ def markdown_filter(text):
 
 
 # ==============================================================================
+# --- CONTEXT PROCESSOR ---
+# ==============================================================================
+
+@app.context_processor
+def inject_sidebar_data():
+    """Make category tree and filter state available to all templates."""
+    videos = get_cached_videos()
+    return {
+        "category_tree": build_category_tree(videos),
+        "category_filter": request.args.get("category", ""),
+        "subcategory_filter": request.args.get("subcategory", ""),
+        "topic_filter": request.args.get("topic", ""),
+    }
+
+
+# ==============================================================================
 # --- ROUTES ---
 # ==============================================================================
 
 @app.route("/")
 def index():
-    """Main page – video grid with search, category chips, and filters."""
+    """Main page – video grid with search, sidebar, and filters."""
     videos = get_cached_videos()
     playlists, channels, categories = get_filter_options(videos)
-    top_categories = get_top_categories(videos)
 
     # Apply filters from query params
     q = request.args.get("q", "").strip()
     playlist_filter = request.args.get("playlist", "")
     channel_filter = request.args.get("channel", "")
     category_filter = request.args.get("category", "")
+    subcategory_filter = request.args.get("subcategory", "")
+    topic_filter = request.args.get("topic", "")
     sort_by = request.args.get("sort", "uploaded")
     sort_dir = request.args.get("dir", "desc")
 
-    filtered = apply_filters(videos, q.lower() if q else "", playlist_filter, channel_filter, category_filter)
+    filtered = apply_filters(videos, q.lower() if q else "",
+                             playlist_filter, channel_filter, category_filter,
+                             subcategory_filter, topic_filter)
     filtered = apply_sort(filtered, sort_by, sort_dir)
 
     # Recently processed (latest 8 by processed_date)
@@ -353,12 +413,10 @@ def index():
                            playlists=playlists,
                            channels=channels,
                            categories=categories,
-                           top_categories=top_categories,
                            recent=recent,
                            q=q,
                            playlist_filter=playlist_filter,
                            channel_filter=channel_filter,
-                           category_filter=category_filter,
                            sort_by=sort_by,
                            sort_dir=sort_dir,
                            has_more=len(filtered) > per_page)
@@ -383,10 +441,13 @@ def api_videos():
     playlist_filter = request.args.get("playlist", "")
     channel_filter = request.args.get("channel", "")
     category_filter = request.args.get("category", "")
+    subcategory_filter = request.args.get("subcategory", "")
+    topic_filter = request.args.get("topic", "")
     sort_by = request.args.get("sort", "uploaded")
     sort_dir = request.args.get("dir", "desc")
 
-    filtered = apply_filters(videos, q, playlist_filter, channel_filter, category_filter)
+    filtered = apply_filters(videos, q, playlist_filter, channel_filter, category_filter,
+                             subcategory_filter, topic_filter)
     filtered = apply_sort(filtered, sort_by, sort_dir)
 
     # Pagination
@@ -429,13 +490,19 @@ def api_stats():
     return jsonify(stats)
 
 
+@app.route("/api/category-tree")
+def api_category_tree():
+    """Return the category tree as JSON."""
+    videos = get_cached_videos()
+    return jsonify(build_category_tree(videos))
+
+
 @app.route("/stats")
 def stats_page():
     """Statistics dashboard page."""
     videos = get_cached_videos()
     stats = compute_stats(videos)
-    top_categories = get_top_categories(videos)
-    return render_template("stats.html", stats=stats, top_categories=top_categories)
+    return render_template("stats.html", stats=stats)
 
 
 # ==============================================================================

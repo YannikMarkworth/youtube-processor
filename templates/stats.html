@@ -5,17 +5,6 @@
 <a href="/" class="header-btn">Zurueck zur Bibliothek</a>
 {% endblock %}
 
-{% block chips %}
-<div class="chips-bar">
-    <div class="chips-scroll">
-        <a href="/" class="chip">Alle Videos</a>
-        {% for cat in top_categories %}
-        <a href="/?category={{ cat }}" class="chip">{{ cat }}</a>
-        {% endfor %}
-    </div>
-</div>
-{% endblock %}
-
 {% block content %}
 
 <div class="section-header" style="margin-bottom: 24px;">

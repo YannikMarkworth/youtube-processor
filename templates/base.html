@@ -8,7 +8,11 @@
 </head>
 <body>
     <header>
-        <div class="container">
+        <div class="container-full">
+            <button id="sidebar-toggle" class="sidebar-toggle-btn" aria-label="Toggle sidebar">
+                <span></span><span></span><span></span>
+            </button>
+
             <a href="/" class="logo" style="text-decoration:none;"><span>YT</span> Processor</a>
 
             {% block header_search %}
@@ -28,13 +32,34 @@
         </div>
     </header>
 
-    {% block chips %}{% endblock %}
+    <div class="app-layout">
+        <aside id="sidebar" class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="/" class="sidebar-link {% if request.path == '/' and not category_filter and not request.args.get('q') %}active{% endif %}">
+                    <span class="sidebar-icon">&#127968;</span> Startseite
+                </a>
+                <a href="/?sort=processed_date&dir=desc" class="sidebar-link">
+                    <span class="sidebar-icon">&#128340;</span> Zuletzt verarbeitet
+                </a>
+                <a href="/stats" class="sidebar-link {% if request.path == '/stats' %}active{% endif %}">
+                    <span class="sidebar-icon">&#128202;</span> Statistiken
+                </a>
 
-    <main>
-        <div class="container">
-            {% block content %}{% endblock %}
-        </div>
-    </main>
+                <hr class="sidebar-divider">
+                <div class="sidebar-section-title">Kategorien</div>
+
+                {% include "partials/sidebar_tree.html" %}
+            </nav>
+        </aside>
+
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <main class="main-content">
+            <div class="container">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
 
     <script src="/static/browse.js" defer></script>
 </body>

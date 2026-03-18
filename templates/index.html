@@ -4,22 +4,6 @@
 {% block header_right %}
 <span class="header-stats">{{ shown }} von {{ total }} Videos</span>
 <button id="filter-toggle" class="header-btn">Filter &#9660;</button>
-<a href="/stats" class="header-btn">Statistiken</a>
-{% endblock %}
-
-{% block chips %}
-<div class="chips-bar">
-    <div class="chips-scroll">
-        <a href="/?sort={{ sort_by }}&dir={{ sort_dir }}"
-           class="chip {% if not category_filter %}active{% endif %}"
-           data-category="">Alle</a>
-        {% for cat in top_categories %}
-        <a href="/?category={{ cat }}&sort={{ sort_by }}&dir={{ sort_dir }}"
-           class="chip {% if category_filter == cat %}active{% endif %}"
-           data-category="{{ cat }}">{{ cat }}</a>
-        {% endfor %}
-    </div>
-</div>
 {% endblock %}
 
 {% block content %}
@@ -81,6 +65,9 @@
                 <div class="card-meta">
                     <span class="channel-name">{{ v.channel }}</span> · {{ v.uploaded }}
                 </div>
+                {% if v.tldr %}
+                <div class="card-tldr">{{ v.tldr }}</div>
+                {% endif %}
             </div>
         </a>
         {% endfor %}
@@ -104,6 +91,11 @@
     <h2 class="section-title">
         {% if q or playlist_filter or channel_filter or category_filter %}
             {{ shown }} Ergebnisse
+            {% if category_filter %}
+                in <em>{{ category_filter }}</em>
+                {% if subcategory_filter %} &rsaquo; <em>{{ subcategory_filter }}</em>{% endif %}
+                {% if topic_filter %} &rsaquo; <em>{{ topic_filter }}</em>{% endif %}
+            {% endif %}
         {% else %}
             Alle Videos
         {% endif %}
@@ -133,6 +125,9 @@
             </div>
             {% if v.category %}
             <span class="card-chip">{{ v.category }}</span>
+            {% endif %}
+            {% if v.tldr %}
+            <div class="card-tldr">{{ v.tldr }}</div>
             {% endif %}
         </div>
     </a>

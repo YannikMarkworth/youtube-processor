@@ -1,6 +1,6 @@
 /* ==============================================================================
    YouTube Processor – Browse JS
-   Infinite scroll, live search, category chips, filter drawer, random discovery
+   Sidebar, infinite scroll, live search, filter drawer, random discovery
    ============================================================================== */
 
 (function () {
@@ -34,11 +34,11 @@
             params.set("dir", parts[1] || "desc");
         }
 
-        // Category from active chip
-        const activeChip = document.querySelector(".chip.active[data-category]");
-        if (activeChip && activeChip.dataset.category) {
-            params.set("category", activeChip.dataset.category);
-        }
+        // Read category/subcategory/topic from current URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("category")) params.set("category", urlParams.get("category"));
+        if (urlParams.get("subcategory")) params.set("subcategory", urlParams.get("subcategory"));
+        if (urlParams.get("topic")) params.set("topic", urlParams.get("topic"));
 
         return params;
     }
@@ -52,6 +52,7 @@
         const category = v.category || "";
         const channel = v.channel || "";
         const uploaded = v.uploaded || "";
+        const tldr = v.tldr || "";
 
         return `
         <a href="/video/${encodeURIComponent(v.id)}" class="video-card">
@@ -68,6 +69,7 @@
                     <span class="channel-name">${escapeHTML(channel)}</span> · ${escapeHTML(uploaded)}
                 </div>
                 ${category ? `<span class="card-chip">${escapeHTML(category)}</span>` : ""}
+                ${tldr ? `<div class="card-tldr">${escapeHTML(tldr)}</div>` : ""}
             </div>
         </a>`;
     }
@@ -76,6 +78,98 @@
         if (!str) return "";
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
                   .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+
+    // --- Sidebar ---
+
+    function setupSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        const toggleBtn = document.getElementById("sidebar-toggle");
+        const overlay = document.getElementById("sidebar-overlay");
+        if (!sidebar || !toggleBtn) return;
+
+        // Restore state from localStorage (desktop only)
+        const savedState = localStorage.getItem("sidebar-collapsed");
+        if (savedState === "true" && window.innerWidth > 900) {
+            sidebar.classList.add("collapsed");
+        }
+
+        toggleBtn.addEventListener("click", () => {
+            if (window.innerWidth <= 900) {
+                // Mobile: toggle overlay mode
+                sidebar.classList.toggle("mobile-open");
+                if (overlay) overlay.classList.toggle("visible");
+            } else {
+                // Desktop: collapse/expand
+                sidebar.classList.toggle("collapsed");
+                localStorage.setItem("sidebar-collapsed", sidebar.classList.contains("collapsed"));
+            }
+        });
+
+        // Close sidebar on overlay click (mobile)
+        if (overlay) {
+            overlay.addEventListener("click", () => {
+                sidebar.classList.remove("mobile-open");
+                overlay.classList.remove("visible");
+            });
+        }
+    }
+
+    // --- Category Tree ---
+
+    function setupCategoryTree() {
+        document.querySelectorAll(".sidebar-expand-btn").forEach(btn => {
+            const header = btn.closest(".sidebar-cat-header, .sidebar-sub-header");
+            if (!header) return;
+            const target = header.nextElementSibling; // .sidebar-subcategories or .sidebar-topics
+
+            btn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!target) return;
+
+                const isHidden = target.style.display === "none";
+                target.style.display = isHidden ? "" : "none";
+                btn.classList.toggle("expanded", isHidden);
+
+                saveSidebarTreeState();
+            });
+        });
+
+        restoreSidebarTreeState();
+    }
+
+    function saveSidebarTreeState() {
+        const expanded = [];
+        document.querySelectorAll(".sidebar-expand-btn.expanded").forEach(btn => {
+            const header = btn.closest(".sidebar-cat-header, .sidebar-sub-header");
+            if (header) {
+                const cat = header.dataset.category || header.dataset.subcategory || "";
+                if (cat) expanded.push(cat);
+            }
+        });
+        localStorage.setItem("sidebar-tree-expanded", JSON.stringify(expanded));
+    }
+
+    function restoreSidebarTreeState() {
+        try {
+            const expanded = JSON.parse(localStorage.getItem("sidebar-tree-expanded") || "[]");
+            if (!expanded.length) return;
+
+            document.querySelectorAll(".sidebar-cat-header, .sidebar-sub-header").forEach(header => {
+                const key = header.dataset.category || header.dataset.subcategory || "";
+                if (key && expanded.includes(key)) {
+                    const btn = header.querySelector(".sidebar-expand-btn");
+                    const target = header.nextElementSibling;
+                    if (btn && target) {
+                        target.style.display = "";
+                        btn.classList.add("expanded");
+                    }
+                }
+            });
+        } catch (e) {
+            // Ignore invalid localStorage data
+        }
     }
 
     // --- Infinite Scroll ---
@@ -133,7 +227,6 @@
         currentPage = 1;
         hasMore = true;
 
-        // Build new URL and navigate (server-renders page 1)
         const params = getFilterParams();
         window.location.href = "/?" + params.toString();
     }
@@ -151,27 +244,12 @@
             }, 400);
         });
 
-        // Enter key triggers immediately
         searchInput.addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
                 e.preventDefault();
                 clearTimeout(searchTimer);
                 resetAndReload();
             }
-        });
-    }
-
-    // --- Category Chips ---
-
-    function setupChips() {
-        document.querySelectorAll(".chip[data-category]").forEach(chip => {
-            chip.addEventListener("click", (e) => {
-                e.preventDefault();
-                // Toggle active state
-                document.querySelectorAll(".chip[data-category]").forEach(c => c.classList.remove("active"));
-                chip.classList.add("active");
-                resetAndReload();
-            });
         });
     }
 
@@ -184,10 +262,9 @@
 
         toggleBtn.addEventListener("click", () => {
             filterDrawer.classList.toggle("open");
-            toggleBtn.textContent = filterDrawer.classList.contains("open") ? "Filter ▲" : "Filter ▼";
+            toggleBtn.textContent = filterDrawer.classList.contains("open") ? "Filter \u25B2" : "Filter \u25BC";
         });
 
-        // Apply filters on change
         filterDrawer.querySelectorAll("select").forEach(sel => {
             sel.addEventListener("change", () => {
                 resetAndReload();
@@ -229,13 +306,13 @@
     document.addEventListener("DOMContentLoaded", () => {
         grid = document.getElementById("video-grid");
 
-        // Read hasMore from data attribute
         if (grid && grid.dataset.hasMore === "false") {
             hasMore = false;
         }
 
+        setupSidebar();
+        setupCategoryTree();
         setupLiveSearch();
-        setupChips();
         setupFilterDrawer();
         setupInfiniteScroll();
         setupRandomButton();
