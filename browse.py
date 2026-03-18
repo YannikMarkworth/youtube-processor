@@ -460,7 +460,7 @@ if __name__ == "__main__":
         build_index()
         print(f"Indexed {len(_VIDEO_CACHE)} videos.")
 
-    print(f"\nOpening: http://localhost:5000")
+    print(f"\nOpening: http://localhost:8080")
     print("Press Ctrl+C to stop.\n")
 
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=8080)
