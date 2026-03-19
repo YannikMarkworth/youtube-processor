@@ -635,6 +635,32 @@ def format_report(videos, taxonomy_paths, taxonomy_tree, cat_dist, cat_balance,
     else:
         lines.append("  No suggestions — all videos have full 3-level categorization.")
 
+    # --- 13. Inbox Status ---
+    inbox_videos = [v for v in videos if v["category"].lower() == "inbox" or not v["category"]]
+    section(13, f"INBOX STATUS ({len(inbox_videos)} videos)")
+    if inbox_videos:
+        lines.append("  Videos currently in Inbox (uncategorized):")
+        lines.append("")
+
+        # Group by channel to show patterns
+        channel_counts = Counter(v["channel"] for v in inbox_videos)
+        if channel_counts:
+            lines.append("  By channel:")
+            for channel, count in channel_counts.most_common(10):
+                lines.append(f"  {count:4d}  {channel}")
+            lines.append("")
+
+        lines.append("  Recent titles:")
+        for v in inbox_videos[:top_n]:
+            lines.append(f"  - {v['title'][:70]}")
+        if len(inbox_videos) > top_n:
+            lines.append(f"  ... and {len(inbox_videos) - top_n} more")
+
+        lines.append("")
+        lines.append("  Run 'python review_inbox.py' to analyze and reclassify these videos.")
+    else:
+        lines.append("  Inbox is empty — all videos are categorized.")
+
     lines.append("")
     lines.append("=" * 70)
     lines.append("  END OF REPORT")

@@ -14,6 +14,30 @@ import time
 
 SUMMARIES_LOG_FOR_CURRENT_RUN = []
 
+
+def _load_taxonomy_for_prompt(taxonomy_path):
+    """Loads categories.txt and returns a bullet list of all category paths for prompt injection."""
+    taxonomy_path = Path(taxonomy_path)
+    if not taxonomy_path.exists():
+        logging.warning(f"Taxonomy file not found: {taxonomy_path}")
+        return ""
+
+    lines = taxonomy_path.read_text(encoding="utf-8").splitlines()
+    paths = []
+    stack = []
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        indent = len(line) - len(line.lstrip())
+        level = indent // 2
+        stack = stack[:level]
+        stack.append(stripped)
+        paths.append("- " + " > ".join(stack))
+
+    return "\n".join(paths)
+
 def setup_logging(log_level=logging.INFO):
     # ... (logging setup remains the same)
     log_file_path = config.ERROR_LOG_FILE
@@ -107,6 +131,16 @@ def process_playlist(playlist_url):
     prompts_available = chunk_prompt_template and final_prompt_template
     if not prompts_available:
         logging.warning("Could not load prompt templates. AI Summarization will be skipped for this playlist.")
+
+    # Inject taxonomy into prompt template so AI uses exact category paths
+    if prompts_available and "{taxonomy}" in final_prompt_template:
+        taxonomy_path = config.BASE_DIR / "categories.txt"
+        taxonomy_text = _load_taxonomy_for_prompt(taxonomy_path)
+        if taxonomy_text:
+            final_prompt_template = final_prompt_template.replace("{taxonomy}", taxonomy_text)
+            logging.info(f"Injected taxonomy ({taxonomy_text.count(chr(10)) + 1} paths) into prompt template.")
+        else:
+            logging.warning("Could not load taxonomy. Prompt will contain empty taxonomy section.")
 
     youtube = youtube_utils.build_youtube_service()
     if not youtube: return

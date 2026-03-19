@@ -21,6 +21,16 @@ CONTEXT_SAFETY_MARGIN = 500
 # --- METADATA PARSING ---
 # ==============================================================================
 
+def normalize_tag(tag):
+    """Normalizes a tag: lowercase, hyphenated, no duplicates or trailing punctuation."""
+    tag = tag.strip().lower()
+    tag = re.sub(r'[\s_]+', '-', tag)   # spaces/underscores → hyphens
+    tag = re.sub(r'-{2,}', '-', tag)    # collapse multiple hyphens
+    tag = tag.strip('-')                 # strip leading/trailing hyphens
+    tag = re.sub(r'[.,;:!?]+$', '', tag)  # remove trailing punctuation
+    return tag
+
+
 def parse_ai_response(raw_response):
     """
     Parses the AI output into metadata and summary text.
@@ -54,7 +64,7 @@ def parse_ai_response(raw_response):
             value = parts[1].strip()
             if key == "tags":
                 # Split comma-separated tags into a list
-                metadata["tags"] = [t.strip().replace(" ", "-") for t in value.split(",") if t.strip()]
+                metadata["tags"] = [normalize_tag(t) for t in value.split(",") if t.strip()]
             else:
                 metadata[key] = value
 
