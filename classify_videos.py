@@ -119,10 +119,11 @@ def load_taxonomy(taxonomy_path):
 # --- FILE SCANNING ---
 # ==============================================================================
 
-def scan_summary_files(summaries_dir, limit=None, reclassify=False):
+def scan_summary_files(summaries_dir, limit=None, reclassify=False, fix_only=False, taxonomy_set=None):
     """
     Scans for summary files. Returns list of dicts with file info.
     Skips already-classified files unless reclassify=True.
+    If fix_only=True, only returns uncategorized or inconsistent files.
     """
     summaries_dir = Path(summaries_dir)
     if not summaries_dir.exists():
@@ -139,6 +140,18 @@ def scan_summary_files(summaries_dir, limit=None, reclassify=False):
         if not info:
             continue
 
+        if fix_only:
+            # Only include uncategorized or inconsistent files
+            cat = info.get("existing_category")
+            full_path = info.get("full_category_path")
+            if not cat:
+                results.append(info)  # uncategorized
+            elif taxonomy_set and full_path and full_path not in taxonomy_set:
+                results.append(info)  # inconsistent
+            else:
+                skipped += 1
+            continue
+
         # Skip already classified unless reclassify
         if not reclassify and info.get("existing_category"):
             skipped += 1
@@ -147,7 +160,10 @@ def scan_summary_files(summaries_dir, limit=None, reclassify=False):
         results.append(info)
 
     if skipped:
-        print(f"Skipped {skipped} already-classified files (use --reclassify to redo).")
+        if fix_only:
+            print(f"Skipped {skipped} correctly-classified files.")
+        else:
+            print(f"Skipped {skipped} already-classified files (use --reclassify to redo).")
 
     if limit:
         results = results[:limit]
@@ -167,6 +183,7 @@ def extract_file_info(filepath):
 
     # Parse YAML frontmatter
     existing_category = None
+    full_category_path = None
     title = "Unknown"
     yaml_match = re.match(r'^---\n(.*?)\n---', content, re.DOTALL)
     if yaml_match:
@@ -175,6 +192,11 @@ def extract_file_info(filepath):
             if fm:
                 title = fm.get("title", "Unknown")
                 existing_category = fm.get("category")
+                # Reconstruct full path for fix-only consistency checking
+                parts = [str(fm.get(k, "") or "").strip()
+                         for k in ("category", "subcategory", "topic")]
+                parts = [p for p in parts if p]
+                full_category_path = " > ".join(parts) if parts else None
         except yaml.YAMLError:
             pass
     else:
@@ -201,6 +223,7 @@ def extract_file_info(filepath):
         "playlist": playlist,
         "excerpt": excerpt,
         "existing_category": existing_category,
+        "full_category_path": full_category_path,
     }
 
 
@@ -397,7 +420,7 @@ def convert_old_format_and_set_category(filepath, content, category):
           "topic": cat_parts["topic"]}
 
     # Prepend YAML frontmatter to existing content (keep everything as-is)
-    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False, width=10000)
     new_content = f"---\n{new_yaml}---\n\n{content}"
 
     try:
@@ -427,8 +450,10 @@ def update_frontmatter_category(filepath, category):
         if fm is None:
             fm = {}
     except yaml.YAMLError as e:
-        print(f"  Error parsing YAML in {filepath.name}: {e}")
-        return False
+        print(f"  Broken YAML in {filepath.name}, recovering from body content...")
+        # Strip the broken frontmatter and rebuild from inline metadata
+        body_after_frontmatter = content[yaml_match.end():]
+        return convert_old_format_and_set_category(filepath, body_after_frontmatter, category)
 
     # Split category into 3 levels
     cat_parts = split_category_path(category)
@@ -443,7 +468,7 @@ def update_frontmatter_category(filepath, category):
         fm["duration"] = format_iso_duration(str(fm["duration"]))
 
     # Rebuild file
-    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False, width=10000)
     rest_of_file = content[yaml_match.end():]
     new_content = f"---\n{new_yaml}---{rest_of_file}"
 
@@ -465,6 +490,7 @@ def main():
     parser.add_argument("--limit", type=int, default=None, help="Only process first N unclassified files")
     parser.add_argument("--batch-size", type=int, default=40, help="Videos per API batch (default: 40)")
     parser.add_argument("--reclassify", action="store_true", help="Re-classify all videos, even already classified ones")
+    parser.add_argument("--fix-only", action="store_true", help="Only re-classify uncategorized or inconsistent videos")
     args = parser.parse_args()
 
     print("=" * 60)
@@ -478,8 +504,12 @@ def main():
     categories = load_taxonomy(taxonomy_path)
     print(f"\nLoaded {len(categories)} categories from {taxonomy_path}")
 
+    # Build taxonomy set for fix-only mode
+    taxonomy_set = set(categories) if args.fix_only else None
+
     # Scan files
-    files = scan_summary_files(config.SUMMARIES_DIR, limit=args.limit, reclassify=args.reclassify)
+    files = scan_summary_files(config.SUMMARIES_DIR, limit=args.limit, reclassify=args.reclassify,
+                               fix_only=args.fix_only, taxonomy_set=taxonomy_set)
     if not files:
         print("No files to classify. Done.")
         sys.exit(0)

@@ -1,0 +1,44 @@
+{# Reusable 3-level category tree for the sidebar #}
+{% for cat_name, cat_data in category_tree.items() %}
+<div class="sidebar-category">
+    <div class="sidebar-cat-header" data-category="{{ cat_name }}">
+        <a href="/?category={{ cat_name | urlencode }}"
+           class="sidebar-cat-link {% if category_filter == cat_name and not subcategory_filter %}active{% endif %}">
+            {{ cat_name }}
+        </a>
+        <span class="sidebar-count">{{ cat_data.count }}</span>
+        {% if cat_data.subcategories %}
+        <button class="sidebar-expand-btn {% if category_filter == cat_name %}expanded{% endif %}" aria-label="Aufklappen">&#9656;</button>
+        {% endif %}
+    </div>
+    {% if cat_data.subcategories %}
+    <div class="sidebar-subcategories" {% if category_filter != cat_name %}style="display:none"{% endif %}>
+        {% for sub_name, sub_data in cat_data.subcategories.items() %}
+        <div class="sidebar-subcategory">
+            <div class="sidebar-sub-header" data-subcategory="{{ sub_name }}">
+                <a href="/?category={{ cat_name | urlencode }}&subcategory={{ sub_name | urlencode }}"
+                   class="sidebar-sub-link {% if subcategory_filter == sub_name and not topic_filter %}active{% endif %}">
+                    {{ sub_name }}
+                </a>
+                <span class="sidebar-count">{{ sub_data.count }}</span>
+                {% if sub_data.topics %}
+                <button class="sidebar-expand-btn {% if subcategory_filter == sub_name %}expanded{% endif %}" aria-label="Aufklappen">&#9656;</button>
+                {% endif %}
+            </div>
+            {% if sub_data.topics %}
+            <div class="sidebar-topics" {% if subcategory_filter != sub_name %}style="display:none"{% endif %}>
+                {% for topic_name, topic_count in sub_data.topics.items() %}
+                <a href="/?category={{ cat_name | urlencode }}&subcategory={{ sub_name | urlencode }}&topic={{ topic_name | urlencode }}"
+                   class="sidebar-topic-link {% if topic_filter == topic_name %}active{% endif %}">
+                    {{ topic_name }}
+                    <span class="sidebar-count">{{ topic_count }}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endfor %}

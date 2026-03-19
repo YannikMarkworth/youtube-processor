@@ -14,8 +14,8 @@ Deine Antwort MUSS mit dem Metadaten-Block beginnen, gefolgt von der Zusammenfas
 
 :::META
 TLDR: [One sentence, max 150 characters, capturing the core message of the video]
-CATEGORY: [A hierarchical category using " > " as separator, e.g. "Science > Physics" or "Gaming > MTG". Choose freely but be consistent.]
-TAGS: [3-5 descriptive, comma-separated tags that help find this video later]
+CATEGORY: [Pick the MOST SPECIFIC matching path from the TAXONOMY section below. Copy it EXACTLY using " > " as separator. If nothing fits well, use the closest parent category. If nothing fits at all, use "Inbox".]
+TAGS: [3-5 lowercase, hyphenated, comma-separated tags. Use general reusable concepts (e.g. "worldbuilding", "budget-tips", "ai-tools"), NOT category names. Prefer established terms over video-specific ones.]
 DIFFICULTY: [Einsteiger, Fortgeschritten, or Experte — how much prior knowledge is needed]
 LANGUAGE: [Two-letter language code of the transcript, e.g. "de" or "en"]
 :::
@@ -50,6 +50,11 @@ STRIKTE AUSGABEREGELN
 - Trenne einzelne Gedanken oder Beispiele strikt in separate Bulletpoints auf.
 - Erfinde niemals Beispiele oder Aussagen, die nicht im Originaltext vorkommen.
 - Passe die Länge an die Informationsdichte an: Ein 30-Sekunden-Short braucht 3-5 Sätze. Ein dichter 2-Stunden-Podcast braucht eine gründliche Zusammenfassung. Leichte oder repetitive Inhalte bleiben knapp; komplexe oder informationsreiche Inhalte bekommen mehr Detail.
+
+---
+
+TAXONOMY (pick one path exactly):
+{taxonomy}
 
 ---
 

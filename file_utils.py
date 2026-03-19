@@ -144,7 +144,7 @@ def create_transcript_file(video_details, transcript, transcript_filepath):
         # Ensure the subfolder exists
         transcript_filepath.parent.mkdir(parents=True, exist_ok=True)
         with open(transcript_filepath, "w", encoding="utf-8") as f:
-            f.write("---\n"); yaml.dump(metadata, f, allow_unicode=True, default_flow_style=False, sort_keys=False); f.write("---\n\n")
+            f.write("---\n"); yaml.dump(metadata, f, allow_unicode=True, default_flow_style=False, sort_keys=False, width=10000); f.write("---\n\n")
             description = video_details.get('description', '').strip()
             if description: f.write("## Description\n\n" + description + "\n\n---\n\n")
             f.write("## Transcript\n\n" + (transcript if transcript else "*Transcript not available or empty.*"))
@@ -155,7 +155,117 @@ def create_transcript_file(video_details, transcript, transcript_filepath):
         print(f"Error writing transcript file {transcript_filepath.name}: {e}")
         return False
 
-def create_summary_file(video_details, summary, summary_filepath, transcript_filename_component, display_playlist_name="N/A", ai_metadata=None):
+def create_atomic_note_files(notes_data, video_details, atomic_notes_subfolder, summary_filename_stem, transcript_filename_stem, display_playlist_name="N/A"):
+    """
+    Creates individual .md files for each atomic note, plus a source index file.
+
+    Args:
+        notes_data: dict with "notes" list and "source_index" string from parse_atomic_notes()
+        video_details: dict with video metadata
+        atomic_notes_subfolder: Path to the per-video subfolder in Atomic Notes/
+        summary_filename_stem: filename stem of the summary (for wikilink)
+        transcript_filename_stem: filename stem of the transcript (for wikilink)
+        display_playlist_name: raw playlist title for display
+
+    Returns:
+        int: number of note files created, or -1 on error
+    """
+    if not notes_data or not notes_data.get("notes"):
+        logging.warning("No atomic notes to write.")
+        return 0
+
+    atomic_notes_subfolder = Path(atomic_notes_subfolder)
+    try:
+        atomic_notes_subfolder.mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        logging.error(f"Failed to create atomic notes subfolder {atomic_notes_subfolder}: {e}")
+        return -1
+
+    video_title = video_details.get("title", "Untitled Video")
+    video_id = video_details.get("videoId", "N/A")
+    video_url = video_details.get("videoUrl", "N/A")
+    today = datetime.now().strftime("%Y-%m-%d")
+    created_count = 0
+
+    for note in notes_data["notes"]:
+        title = note["title"]
+        body = note["body"]
+        tags = note.get("tags", [])
+
+        # Clean the title for use as filename
+        note_filename = clean_filename(title) + ".md"
+        note_filepath = atomic_notes_subfolder / note_filename
+
+        # Avoid overwriting — append a counter if file exists
+        counter = 2
+        while note_filepath.exists():
+            note_filename = clean_filename(title) + f" ({counter}).md"
+            note_filepath = atomic_notes_subfolder / note_filename
+            counter += 1
+
+        try:
+            frontmatter = {
+                "title": title,
+                "source_video": video_title,
+                "video_id": video_id,
+                "video_url": video_url,
+                "playlist": display_playlist_name,
+                "created": today,
+            }
+            if tags:
+                # Store tags without # prefix in YAML, keep # in body
+                frontmatter["tags"] = [t.lstrip('#') for t in tags]
+
+            with open(note_filepath, "w", encoding="utf-8") as f:
+                f.write("---\n")
+                yaml.dump(frontmatter, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+                f.write("---\n\n")
+
+                # Write the note body
+                f.write(body)
+                f.write("\n\n")
+
+                # Write tag line
+                if tags:
+                    f.write(" ".join(tags) + "\n\n")
+
+                # Write source links
+                f.write("---\n\n")
+                f.write(f"**Source:** [[{summary_filename_stem}|Summary]] · [[{transcript_filename_stem}|Transcript]]\n")
+
+            created_count += 1
+        except Exception as e:
+            logging.error(f"Failed to write atomic note '{title}': {e}")
+
+    # Write source index file if present
+    source_index = notes_data.get("source_index", "").strip()
+    if source_index:
+        index_filepath = atomic_notes_subfolder / "_source_index.md"
+        try:
+            frontmatter = {
+                "title": f"Source Index – {video_title}",
+                "source_video": video_title,
+                "video_id": video_id,
+                "created": today,
+            }
+            with open(index_filepath, "w", encoding="utf-8") as f:
+                f.write("---\n")
+                yaml.dump(frontmatter, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+                f.write("---\n\n")
+                f.write("## Source Material Index\n\n")
+                f.write(source_index)
+                f.write("\n\n---\n\n")
+                f.write(f"**Source:** [[{summary_filename_stem}|Summary]] · [[{transcript_filename_stem}|Transcript]]\n")
+            logging.info(f"Created source index file: {index_filepath.name}")
+        except Exception as e:
+            logging.error(f"Failed to write source index file: {e}")
+
+    logging.info(f"Created {created_count} atomic note files in {atomic_notes_subfolder}")
+    print(f"Created {created_count} atomic notes in: {atomic_notes_subfolder.relative_to(config.OUTPUT_DIR)}")
+    return created_count
+
+
+def create_summary_file(video_details, summary, summary_filepath, transcript_filename_component, display_playlist_name="N/A", ai_metadata=None, atomic_notes_folder_name=None):
     """
     Creates or overwrites the summary Markdown file with YAML frontmatter.
     The summary_filepath should include the playlist subfolder.
@@ -210,7 +320,7 @@ def create_summary_file(video_details, summary, summary_filepath, transcript_fil
         with open(summary_filepath, "w", encoding="utf-8") as f:
             # Write YAML frontmatter
             f.write("---\n")
-            yaml.dump(frontmatter, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            yaml.dump(frontmatter, f, allow_unicode=True, default_flow_style=False, sort_keys=False, width=10000)
             f.write("---\n\n")
 
             # Write video info block
@@ -231,6 +341,11 @@ def create_summary_file(video_details, summary, summary_filepath, transcript_fil
             f.write("## AI Summary\n\n")
             f.write(summary if summary.strip() else "*Summary could not be generated or was empty.*")
             f.write("\n\n")
+
+            # Write atomic notes link if available
+            if atomic_notes_folder_name:
+                f.write("## Atomic Notes\n\n")
+                f.write(f"[[{atomic_notes_folder_name}]]\n\n")
 
             # Write transcript link
             f.write("## Transcript\n\n")

@@ -1,87 +1,114 @@
-Tabletop RPGs (Fokus: D&D & Daggerheart)
-  Spielleiter (DM / GM Handwerk)
+Tabletop RPGs
+  Game Mastering
     Worldbuilding & Lore
     Encounter & Combat Design
     Narrative & Storytelling
     Prep & Tools
-  Spieler (Player Handwerk)
-    Character Builds & Mechanik
+  Player Craft
+    Character Builds & Mechanics
     Roleplay & Acting
-    Taktik & Etikette
-  Systeme, Regeln & Homebrew
-    Regelwerke & Updates
+    Tactics & Etiquette
+  Systems & Homebrew
+    Rulesets & Updates
     Homebrew & Hacks
   TTRPG Culture & Shows
     Actual Plays
     Community & Industry
 
-Magic: The Gathering (MTG)
+Magic: The Gathering
   Commander (EDH)
     Deck Techs & Builds
-    Strategie & Politics
+    Strategy & Politics
   Constructed (Standard / Arena)
-    Meta Analyse & Deck Guides
+    Meta Analysis & Deck Guides
     Arena Economy
   Limited (Draft & Sealed)
     Drafting Strategy
-  MTG Theorie, Game Design & Kultur
+  MTG Theory & Game Design
     Game Design
     Community
 
-Content Creation & Videoproduktion
-  YouTube Strategie & Creator Business
-    Growth & Algorithmus
+Content Creation & Video Production
+  YouTube Strategy & Creator Business
+    Growth & Algorithm
     Creator Economy
   Post-Production & Editing
-    Software & Schnitt
+    Software & Editing
     Color Grading & VFX
-  Filmmaking & Kamera-Gear
-    Aufnahme & Technik
+  Filmmaking & Camera Gear
+    Recording & Technique
 
 Storytelling & Creative Writing
-  Schreibhandwerk (Crafting)
-    Plot & Struktur
-    Charakterentwicklung
+  Writing Craft
+    Plot & Structure
+    Character Development
     Worldbuilding
-  Produktivität für Autoren
-    Schreibblockaden lösen
+  Writer Productivity
+    Writer's Block
     Publishing
-    Research-Methoden
+    Research Methods
 
-Technologie, KI & Personal Knowledge Management
-  Künstliche Intelligenz (KI)
-    Produktivität & LLMs
-    Coding & Automatisierung
-    Media Creation
-  Personal Knowledge Management (PKM)
-    Obsidian & Notizen
-  Tech-Kultur & Hardware
-    Gadgets & IT
+Artificial Intelligence
+  Productivity & LLMs
+  Coding & Automation
+  AI Media Creation
 
-Psychologie, Persönlichkeit & Soziales
-  Neurodiversität & Mental Health
-    ADHS & Autismus
-    Mental Health
-  Soziale Skills & Kommunikation
-    Interaktion
-    Dating & Beziehungen
-  Mindset & Habit-Building
-    Lebensführung
+Technology & Digital Tools
+  PKM & Note-Taking
+  Gadgets & Hardware
+  Software & Apps
 
-Wirtschaft, Finanzen & Business
+Psychology & Mental Health
+  Neurodiversity
+    ADHD & Autism
+  Mental Health & Therapy
+  Developmental Psychology
+
+Social Skills & Communication
+  Conversation & Interaction
+    Small Talk & Conversation Skills
+    Conflict Resolution & Boundaries
+    Body Language & Presence
+  Dating & Relationships
+    Attraction & Flirting
+    Relationship Maintenance
+    Online Dating
+
+Mindset & Personal Development
+  Productivity & Routines
+  Self-Discovery & Values
+  Health & Wellbeing
+
+Business & Finance
   Personal Finance & Investing
   Business Strategy & Marketing
-  Makroökonomie
+  Macroeconomics
 
-Politik, Gesellschaft & Wissenschaft
-  Politik & Geopolitik (DE / US / Global)
-  Internet- & Popkultur (Gesellschaftskritik)
-  Wissenschaft & Geschichte
+Politics & Society
+  German Politics
+  US Politics
+  Geopolitics & International Affairs
+  Internet & Pop Culture Critique
 
-Erziehung (Parenting)
-  Kinderpsychologie & Erziehungsmethoden
-  Familienalltag & Dynamiken
+Science & History
+  Natural Sciences
+  Space & Astronomy
+  History & Archaeology
+  Technology & Engineering
 
-Entertainment & Filmanalyse
-  Media Analysis (Video Essays)
-  Comedy & Sketche
+Parenting
+  Child Psychology & Methods
+  Family Life & Dynamics
+
+Media Analysis
+  Film & Series Analysis
+  YouTube & Creator Analysis
+  Culture & Society Essays
+
+Comedy & Humor
+  Stand-Up & Improv
+  Sketch Comedy & Skits
+  Satire & Parody
+  Shorts & Clips
+
+Inbox

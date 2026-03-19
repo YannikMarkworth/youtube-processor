@@ -14,6 +14,30 @@ import time
 
 SUMMARIES_LOG_FOR_CURRENT_RUN = []
 
+
+def _load_taxonomy_for_prompt(taxonomy_path):
+    """Loads categories.txt and returns a bullet list of all category paths for prompt injection."""
+    taxonomy_path = Path(taxonomy_path)
+    if not taxonomy_path.exists():
+        logging.warning(f"Taxonomy file not found: {taxonomy_path}")
+        return ""
+
+    lines = taxonomy_path.read_text(encoding="utf-8").splitlines()
+    paths = []
+    stack = []
+
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            continue
+        indent = len(line) - len(line.lstrip())
+        level = indent // 2
+        stack = stack[:level]
+        stack.append(stripped)
+        paths.append("- " + " > ".join(stack))
+
+    return "\n".join(paths)
+
 def setup_logging(log_level=logging.INFO):
     # ... (logging setup remains the same)
     log_file_path = config.ERROR_LOG_FILE
@@ -104,9 +128,22 @@ def process_playlist(playlist_url):
     logging.info("Loading summarization prompts...")
     chunk_prompt_template = ai_utils.load_prompt(config.CHUNK_PROMPT_FILE)
     final_prompt_template = ai_utils.load_prompt(config.FINAL_PROMPT_FILE)
+    atomic_notes_prompt_template = ai_utils.load_prompt(config.ATOMIC_NOTES_PROMPT_FILE)
     prompts_available = chunk_prompt_template and final_prompt_template
     if not prompts_available:
         logging.warning("Could not load prompt templates. AI Summarization will be skipped for this playlist.")
+    if not atomic_notes_prompt_template:
+        logging.warning("Could not load atomic notes prompt. Atomic note generation will be skipped.")
+
+    # Inject taxonomy into prompt template so AI uses exact category paths
+    if prompts_available and "{taxonomy}" in final_prompt_template:
+        taxonomy_path = config.BASE_DIR / "categories.txt"
+        taxonomy_text = _load_taxonomy_for_prompt(taxonomy_path)
+        if taxonomy_text:
+            final_prompt_template = final_prompt_template.replace("{taxonomy}", taxonomy_text)
+            logging.info(f"Injected taxonomy ({taxonomy_text.count(chr(10)) + 1} paths) into prompt template.")
+        else:
+            logging.warning("Could not load taxonomy. Prompt will contain empty taxonomy section.")
 
     youtube = youtube_utils.build_youtube_service()
     if not youtube: return
@@ -154,6 +191,7 @@ def process_playlist(playlist_url):
     
     playlist_transcript_subfolder = config.TRANSCRIPTS_DIR / cleaned_playlist_name_for_path_and_filename
     playlist_summary_subfolder = config.SUMMARIES_DIR / cleaned_playlist_name_for_path_and_filename
+    playlist_atomic_notes_subfolder = config.ATOMIC_NOTES_DIR / cleaned_playlist_name_for_path_and_filename
 
     for index, (video_id, _) in enumerate(videos_to_process):
         current_video_num = index + 1
@@ -231,10 +269,34 @@ def process_playlist(playlist_url):
                 summary_content = "AI summary generation failed. Please check AI service or logs."
                 is_placeholder_summary = True
 
-        if file_utils.create_summary_file(video_details, summary_content, summary_filepath, filename_core_component, raw_playlist_title, ai_metadata):
+        # --- Atomic Notes Generation ---
+        atomic_notes_folder_name = None
+        if atomic_notes_prompt_template and transcript_available_for_summarization and not is_placeholder_summary:
+            logging.info(f"Generating atomic notes for video ID '{video_id}'...")
+            cleaned_video_title = file_utils.clean_filename(video_title_raw)
+            video_atomic_notes_subfolder = playlist_atomic_notes_subfolder / cleaned_video_title
+
+            raw_atomic = ai_utils.generate_atomic_notes(
+                transcript_content, atomic_notes_prompt_template, video_title_raw
+            )
+            if raw_atomic:
+                parsed_notes = ai_utils.parse_atomic_notes(raw_atomic)
+                transcript_filename_stem = filename_core_component
+                summary_filename_stem_for_link = f"{filename_core_component} – Summary"
+                notes_count = file_utils.create_atomic_note_files(
+                    parsed_notes, video_details, video_atomic_notes_subfolder,
+                    summary_filename_stem_for_link, transcript_filename_stem,
+                    raw_playlist_title
+                )
+                if notes_count > 0:
+                    atomic_notes_folder_name = cleaned_video_title
+            else:
+                logging.warning(f"Atomic notes generation returned no result for video ID '{video_id}'.")
+
+        if file_utils.create_summary_file(video_details, summary_content, summary_filepath, filename_core_component, raw_playlist_title, ai_metadata, atomic_notes_folder_name):
             logging.info(f"Video {video_id} processed. Transcript and Summary files created/updated at {summary_filepath.parent}")
             processed_count += 1
-            
+
             summary_filename_stem = summary_filepath.name.removesuffix('.md')
             
             link_path_for_master_log = f"summaries/{cleaned_playlist_name_for_path_and_filename}/{summary_filename_stem}"
