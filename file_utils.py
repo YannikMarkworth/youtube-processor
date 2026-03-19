@@ -144,7 +144,7 @@ def create_transcript_file(video_details, transcript, transcript_filepath):
         # Ensure the subfolder exists
         transcript_filepath.parent.mkdir(parents=True, exist_ok=True)
         with open(transcript_filepath, "w", encoding="utf-8") as f:
-            f.write("---\n"); yaml.dump(metadata, f, allow_unicode=True, default_flow_style=False, sort_keys=False); f.write("---\n\n")
+            f.write("---\n"); yaml.dump(metadata, f, allow_unicode=True, default_flow_style=False, sort_keys=False, width=10000); f.write("---\n\n")
             description = video_details.get('description', '').strip()
             if description: f.write("## Description\n\n" + description + "\n\n---\n\n")
             f.write("## Transcript\n\n" + (transcript if transcript else "*Transcript not available or empty.*"))
@@ -210,7 +210,7 @@ def create_summary_file(video_details, summary, summary_filepath, transcript_fil
         with open(summary_filepath, "w", encoding="utf-8") as f:
             # Write YAML frontmatter
             f.write("---\n")
-            yaml.dump(frontmatter, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            yaml.dump(frontmatter, f, allow_unicode=True, default_flow_style=False, sort_keys=False, width=10000)
             f.write("---\n\n")
 
             # Write video info block

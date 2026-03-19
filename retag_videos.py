@@ -310,14 +310,20 @@ def update_frontmatter_tags(filepath, tags):
         if fm is None:
             fm = {}
     except yaml.YAMLError as e:
-        print(f"  Error parsing YAML in {filepath.name}: {e}")
-        return False
+        print(f"  Broken YAML in {filepath.name}, rebuilding frontmatter...")
+        # Try to salvage what we can: strip broken frontmatter and rebuild minimal fm
+        fm = {}
+        # Extract title from body content
+        body = content[yaml_match.end():]
+        title_match = re.search(r'\*\*Title:\*\*\s*(.+)', body)
+        if title_match:
+            fm["title"] = title_match.group(1).strip()
 
     # Normalize and set tags
     fm["tags"] = [normalize_tag(t) for t in tags if normalize_tag(t)]
 
     # Rebuild file
-    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False, width=10000)
     rest_of_file = content[yaml_match.end():]
     new_content = f"---\n{new_yaml}---{rest_of_file}"
 

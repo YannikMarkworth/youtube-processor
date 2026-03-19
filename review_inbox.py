@@ -310,7 +310,7 @@ def reclassify_video(filepath, category):
     fm["subcategory"] = cat_parts["subcategory"]
     fm["topic"] = cat_parts["topic"]
 
-    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False, width=10000)
     rest_of_file = content[yaml_match.end():]
     new_content = f"---\n{new_yaml}---{rest_of_file}"
 

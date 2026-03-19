@@ -420,7 +420,7 @@ def convert_old_format_and_set_category(filepath, content, category):
           "topic": cat_parts["topic"]}
 
     # Prepend YAML frontmatter to existing content (keep everything as-is)
-    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False, width=10000)
     new_content = f"---\n{new_yaml}---\n\n{content}"
 
     try:
@@ -450,8 +450,10 @@ def update_frontmatter_category(filepath, category):
         if fm is None:
             fm = {}
     except yaml.YAMLError as e:
-        print(f"  Error parsing YAML in {filepath.name}: {e}")
-        return False
+        print(f"  Broken YAML in {filepath.name}, recovering from body content...")
+        # Strip the broken frontmatter and rebuild from inline metadata
+        body_after_frontmatter = content[yaml_match.end():]
+        return convert_old_format_and_set_category(filepath, body_after_frontmatter, category)
 
     # Split category into 3 levels
     cat_parts = split_category_path(category)
@@ -466,7 +468,7 @@ def update_frontmatter_category(filepath, category):
         fm["duration"] = format_iso_duration(str(fm["duration"]))
 
     # Rebuild file
-    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False)
+    new_yaml = yaml.dump(fm, allow_unicode=True, default_flow_style=False, sort_keys=False, width=10000)
     rest_of_file = content[yaml_match.end():]
     new_content = f"---\n{new_yaml}---{rest_of_file}"
 
