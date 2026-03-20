@@ -1,6 +1,6 @@
 /* ==============================================================================
-   YouTube Processor – Browse JS
-   Sidebar, infinite scroll, live search, filter drawer, random discovery
+   MyTube – Browse JS
+   Sidebar, infinite scroll, live search, filter drawer, chips, random discovery
    ============================================================================== */
 
 (function () {
@@ -15,7 +15,27 @@
     // --- DOM refs (set on DOMContentLoaded) ---
     let grid, sentinel, searchInput, filterDrawer;
 
+    // --- Duration helpers ---
+
+    function parseDurationSecs(d) {
+        if (!d) return 0;
+        const parts = d.split(":").map(Number);
+        if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+        if (parts.length === 2) return parts[0] * 60 + parts[1];
+        return 0;
+    }
+
+    function isShort(duration) {
+        return parseDurationSecs(duration) < 90;
+    }
+
     // --- Helpers ---
+
+    function escapeHTML(str) {
+        if (!str) return "";
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                  .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
 
     function getFilterParams() {
         const params = new URLSearchParams();
@@ -40,44 +60,50 @@
         if (urlParams.get("subcategory")) params.set("subcategory", urlParams.get("subcategory"));
         if (urlParams.get("topic")) params.set("topic", urlParams.get("topic"));
 
+        // Length filter from active chip
+        const activeChip = document.querySelector(".chip.active[data-length]");
+        if (activeChip && activeChip.dataset.length !== "all") {
+            params.set("length", activeChip.dataset.length);
+        }
+
         return params;
     }
 
     function createCardHTML(v) {
+        const short = v.is_short || isShort(v.duration);
         const thumbSrc = v.video_id
-            ? `https://img.youtube.com/vi/${v.video_id}/mqdefault.jpg`
+            ? `https://img.youtube.com/vi/${v.video_id}/maxresdefault.jpg`
             : "";
         const fallbackLetter = (v.title || "?")[0].toUpperCase();
         const duration = v.duration || "";
-        const category = v.category || "";
         const channel = v.channel || "";
         const uploaded = v.uploaded || "";
         const tldr = v.tldr || "";
+        const category = v.category || "";
+
+        const thumbClass = short ? "card-thumbnail is-short" : "card-thumbnail";
+        const fallbackStyle = thumbSrc ? ' style="display:none"' : '';
 
         return `
         <a href="/video/${encodeURIComponent(v.id)}" class="video-card">
-            <div class="card-thumbnail">
+            <div class="${thumbClass}">
                 ${thumbSrc
-                    ? `<img loading="lazy" src="${thumbSrc}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`
+                    ? `<img loading="lazy" src="${thumbSrc}" alt=""
+                            onerror="this.src='https://img.youtube.com/vi/${v.video_id}/hqdefault.jpg'">`
                     : ""}
-                <div class="card-thumbnail-fallback" style="${thumbSrc ? 'display:none' : 'display:flex'}">${fallbackLetter}</div>
-                ${duration ? `<span class="card-duration">${duration}</span>` : ""}
+                <div class="card-thumbnail-fallback"${fallbackStyle}>${fallbackLetter}</div>
+                ${short ? '<span class="shorts-badge">Short</span>' : ""}
+                ${duration ? `<span class="card-duration">${escapeHTML(duration)}</span>` : ""}
             </div>
             <div class="card-body">
                 <div class="card-title">${escapeHTML(v.title)}</div>
                 <div class="card-meta">
-                    <span class="channel-name">${escapeHTML(channel)}</span> · ${escapeHTML(uploaded)}
+                    <span class="channel-name">${escapeHTML(channel)}</span>${uploaded ? ` · ${escapeHTML(uploaded)}` : ""}
                 </div>
                 ${category ? `<span class="card-chip">${escapeHTML(category)}</span>` : ""}
                 ${tldr ? `<div class="card-tldr">${escapeHTML(tldr)}</div>` : ""}
             </div>
         </a>`;
-    }
-
-    function escapeHTML(str) {
-        if (!str) return "";
-        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                  .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
     }
 
     // --- Sidebar ---
@@ -90,18 +116,21 @@
 
         // Restore state from localStorage (desktop only)
         const savedState = localStorage.getItem("sidebar-collapsed");
-        if (savedState === "true" && window.innerWidth > 900) {
+        if (savedState === "true" && window.innerWidth > 1024) {
             sidebar.classList.add("collapsed");
         }
 
         toggleBtn.addEventListener("click", () => {
-            if (window.innerWidth <= 900) {
+            if (window.innerWidth <= 1024) {
                 // Mobile: toggle overlay mode
                 sidebar.classList.toggle("mobile-open");
                 if (overlay) overlay.classList.toggle("visible");
             } else {
                 // Desktop: collapse/expand
                 sidebar.classList.toggle("collapsed");
+                // Push main content when collapsed
+                const main = document.querySelector(".main-content");
+                if (main) main.style.marginLeft = sidebar.classList.contains("collapsed") ? "0" : "";
                 localStorage.setItem("sidebar-collapsed", sidebar.classList.contains("collapsed"));
             }
         });
@@ -113,6 +142,12 @@
                 overlay.classList.remove("visible");
             });
         }
+
+        // Apply saved collapse state on desktop
+        if (savedState === "true" && window.innerWidth > 1024) {
+            const main = document.querySelector(".main-content");
+            if (main) main.style.marginLeft = "0";
+        }
     }
 
     // --- Category Tree ---
@@ -121,7 +156,7 @@
         document.querySelectorAll(".sidebar-expand-btn").forEach(btn => {
             const header = btn.closest(".sidebar-cat-header, .sidebar-sub-header");
             if (!header) return;
-            const target = header.nextElementSibling; // .sidebar-subcategories or .sidebar-topics
+            const target = header.nextElementSibling;
 
             btn.addEventListener("click", (e) => {
                 e.preventDefault();
@@ -216,7 +251,7 @@
             if (entries[0].isIntersecting) {
                 loadNextPage();
             }
-        }, { rootMargin: "200px" });
+        }, { rootMargin: "300px" });
 
         observer.observe(sentinel);
     }
@@ -272,6 +307,25 @@
         });
     }
 
+    // --- Length Filter Chips ---
+
+    function setupChips() {
+        // Restore active chip from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const activeLength = urlParams.get("length") || "all";
+        document.querySelectorAll(".chip[data-length]").forEach(chip => {
+            chip.classList.toggle("active", chip.dataset.length === activeLength);
+        });
+
+        document.querySelectorAll(".chip[data-length]").forEach(chip => {
+            chip.addEventListener("click", () => {
+                document.querySelectorAll(".chip[data-length]").forEach(c => c.classList.remove("active"));
+                chip.classList.add("active");
+                resetAndReload();
+            });
+        });
+    }
+
     // --- Random Discovery ---
 
     async function loadRandomVideos() {
@@ -314,6 +368,7 @@
         setupCategoryTree();
         setupLiveSearch();
         setupFilterDrawer();
+        setupChips();
         setupInfiniteScroll();
         setupRandomButton();
 

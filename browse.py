@@ -84,6 +84,7 @@ def _video_dict_from_file(filepath, summaries_dir):
         "language": fm.get("language", ""),
         "processed_date": str(fm.get("processed_date", "")),
         "mtime": os.path.getmtime(str(filepath)),
+        "is_short": parse_duration_secs(fm.get("duration", "")) < 90,
     }
 
 
@@ -314,10 +315,40 @@ def apply_filters(videos, q="", playlist="", channel="", category="", subcategor
     return filtered
 
 
+def parse_duration_secs(duration_str):
+    """Convert duration string (H:MM:SS or M:SS) to total seconds."""
+    if not duration_str:
+        return 0
+    try:
+        parts = list(map(int, str(duration_str).split(":")))
+        if len(parts) == 3:
+            return parts[0] * 3600 + parts[1] * 60 + parts[2]
+        if len(parts) == 2:
+            return parts[0] * 60 + parts[1]
+    except (ValueError, AttributeError):
+        pass
+    return 0
+
+
+def apply_length_filter(videos, length="all"):
+    """Filter videos by duration category: all, short (<90s), regular (90s-20m), long (>20m)."""
+    if length == "short":
+        return [v for v in videos if parse_duration_secs(v.get("duration", "")) < 90]
+    elif length == "regular":
+        return [v for v in videos if 90 <= parse_duration_secs(v.get("duration", "")) <= 1200]
+    elif length == "long":
+        return [v for v in videos if parse_duration_secs(v.get("duration", "")) > 1200]
+    return videos
+
+
 def apply_sort(videos, sort_by="uploaded", sort_dir="desc"):
     """Sort video list by given field and direction."""
-    if sort_by in ("title", "channel", "uploaded", "playlist", "category", "duration"):
+    if sort_by in ("title", "channel", "uploaded", "playlist", "category"):
         videos.sort(key=lambda v: str(v.get(sort_by, "")).lower(), reverse=(sort_dir == "desc"))
+    elif sort_by == "processed_date":
+        videos.sort(key=lambda v: str(v.get("processed_date", "")), reverse=(sort_dir == "desc"))
+    elif sort_by == "duration":
+        videos.sort(key=lambda v: parse_duration_secs(v.get("duration", "")), reverse=(sort_dir == "desc"))
     return videos
 
 
@@ -391,12 +422,14 @@ def index():
     category_filter = request.args.get("category", "")
     subcategory_filter = request.args.get("subcategory", "")
     topic_filter = request.args.get("topic", "")
+    length_filter = request.args.get("length", "all")
     sort_by = request.args.get("sort", "uploaded")
     sort_dir = request.args.get("dir", "desc")
 
     filtered = apply_filters(videos, q.lower() if q else "",
                              playlist_filter, channel_filter, category_filter,
                              subcategory_filter, topic_filter)
+    filtered = apply_length_filter(filtered, length_filter)
     filtered = apply_sort(filtered, sort_by, sort_dir)
 
     # Recently processed (latest 8 by processed_date)
@@ -417,6 +450,7 @@ def index():
                            q=q,
                            playlist_filter=playlist_filter,
                            channel_filter=channel_filter,
+                           length_filter=length_filter,
                            sort_by=sort_by,
                            sort_dir=sort_dir,
                            has_more=len(filtered) > per_page)
@@ -443,11 +477,13 @@ def api_videos():
     category_filter = request.args.get("category", "")
     subcategory_filter = request.args.get("subcategory", "")
     topic_filter = request.args.get("topic", "")
+    length_filter = request.args.get("length", "all")
     sort_by = request.args.get("sort", "uploaded")
     sort_dir = request.args.get("dir", "desc")
 
     filtered = apply_filters(videos, q, playlist_filter, channel_filter, category_filter,
                              subcategory_filter, topic_filter)
+    filtered = apply_length_filter(filtered, length_filter)
     filtered = apply_sort(filtered, sort_by, sort_dir)
 
     # Pagination
