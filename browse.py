@@ -335,13 +335,11 @@ def apply_filters(videos, q="", playlist="", channel="", category="", subcategor
 
 
 def apply_length_filter(videos, length="all"):
-    """Filter videos by duration category: all, short (<90s), regular (90s-20m), long (>20m)."""
+    """Filter videos by duration: all, short (<90s), video (≥90s)."""
     if length == "short":
         return [v for v in videos if parse_duration_secs(v.get("duration", "")) < 90]
-    elif length == "regular":
-        return [v for v in videos if 90 <= parse_duration_secs(v.get("duration", "")) <= 1200]
-    elif length == "long":
-        return [v for v in videos if parse_duration_secs(v.get("duration", "")) > 1200]
+    elif length == "video":
+        return [v for v in videos if parse_duration_secs(v.get("duration", "")) >= 90]
     return videos
 
 

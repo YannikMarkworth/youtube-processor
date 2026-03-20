@@ -45,9 +45,8 @@
 <!-- Length filter chips -->
 <div class="chips-bar">
     <button class="chip {% if length_filter == 'all' or not length_filter %}active{% endif %}" data-length="all">Alle</button>
-    <button class="chip {% if length_filter == 'short' %}active{% endif %}" data-length="short">Shorts &lt; 90s</button>
-    <button class="chip {% if length_filter == 'regular' %}active{% endif %}" data-length="regular">Regular 90s – 20m</button>
-    <button class="chip {% if length_filter == 'long' %}active{% endif %}" data-length="long">Lang &gt; 20m</button>
+    <button class="chip {% if length_filter == 'short' %}active{% endif %}" data-length="short">Shorts</button>
+    <button class="chip {% if length_filter == 'video' %}active{% endif %}" data-length="video">Videos</button>
 </div>
 
 <!-- Shorts Shelf (only in "All" view) -->
@@ -96,10 +95,8 @@
             {% if q %} für „{{ q }}"{% endif %}
         {% elif length_filter == 'short' %}
             Shorts
-        {% elif length_filter == 'regular' %}
-            Regular Videos
-        {% elif length_filter == 'long' %}
-            Lange Videos
+        {% elif length_filter == 'video' %}
+            Videos
         {% else %}
             Videos
         {% endif %}
