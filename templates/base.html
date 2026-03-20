@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}YouTube Processor{% endblock %}</title>
+    <title>{% block title %}MyTube{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/browse.css">
 </head>
 <body>
@@ -13,7 +16,7 @@
                 <span></span><span></span><span></span>
             </button>
 
-            <a href="/" class="logo" style="text-decoration:none;"><span>YT</span> Processor</a>
+            <a href="/" class="logo" style="text-decoration:none;"><span class="logo-icon">▶</span> MyTube</a>
 
             {% block header_search %}
             <div class="header-search">
@@ -40,6 +43,9 @@
                 </a>
                 <a href="/?sort=processed_date&dir=desc" class="sidebar-link">
                     <span class="sidebar-icon">&#128340;</span> Zuletzt verarbeitet
+                </a>
+                <a href="/discover" class="sidebar-link {% if request.path == '/discover' %}active{% endif %}">
+                    <span class="sidebar-icon">&#127922;</span> Entdecken
                 </a>
                 <a href="/stats" class="sidebar-link {% if request.path == '/stats' %}active{% endif %}">
                     <span class="sidebar-icon">&#128202;</span> Statistiken
