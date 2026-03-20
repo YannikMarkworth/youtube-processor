@@ -34,6 +34,21 @@ _CACHE_FILE = Path(config.SUMMARIES_DIR) / "_video_index.json"
 REFRESH_INTERVAL = 60       # Seconds between incremental refreshes
 
 
+def parse_duration_secs(duration_str):
+    """Convert duration string (H:MM:SS or M:SS) to total seconds."""
+    if not duration_str:
+        return 0
+    try:
+        parts = list(map(int, str(duration_str).split(":")))
+        if len(parts) == 3:
+            return parts[0] * 3600 + parts[1] * 60 + parts[2]
+        if len(parts) == 2:
+            return parts[0] * 60 + parts[1]
+    except (ValueError, AttributeError):
+        pass
+    return 0
+
+
 def parse_frontmatter(filepath):
     """Reads a summary .md file and returns (frontmatter_dict, body_text)."""
     try:
@@ -213,6 +228,10 @@ def refresh_index():
 def get_cached_videos():
     """Return the cached video list, refreshing if needed."""
     refresh_index()
+    # Backfill is_short for videos loaded from old cache files
+    for v in _VIDEO_CACHE:
+        if "is_short" not in v:
+            v["is_short"] = parse_duration_secs(v.get("duration", "")) < 90
     return _VIDEO_CACHE
 
 
@@ -315,21 +334,6 @@ def apply_filters(videos, q="", playlist="", channel="", category="", subcategor
     return filtered
 
 
-def parse_duration_secs(duration_str):
-    """Convert duration string (H:MM:SS or M:SS) to total seconds."""
-    if not duration_str:
-        return 0
-    try:
-        parts = list(map(int, str(duration_str).split(":")))
-        if len(parts) == 3:
-            return parts[0] * 3600 + parts[1] * 60 + parts[2]
-        if len(parts) == 2:
-            return parts[0] * 60 + parts[1]
-    except (ValueError, AttributeError):
-        pass
-    return 0
-
-
 def apply_length_filter(videos, length="all"):
     """Filter videos by duration category: all, short (<90s), regular (90s-20m), long (>20m)."""
     if length == "short":
@@ -423,7 +427,7 @@ def index():
     subcategory_filter = request.args.get("subcategory", "")
     topic_filter = request.args.get("topic", "")
     length_filter = request.args.get("length", "all")
-    sort_by = request.args.get("sort", "uploaded")
+    sort_by = request.args.get("sort", "processed_date")
     sort_dir = request.args.get("dir", "desc")
 
     filtered = apply_filters(videos, q.lower() if q else "",
@@ -432,28 +436,33 @@ def index():
     filtered = apply_length_filter(filtered, length_filter)
     filtered = apply_sort(filtered, sort_by, sort_dir)
 
-    # Recently processed (latest 8 by processed_date)
-    recent = sorted(videos, key=lambda v: v.get("processed_date", ""), reverse=True)[:8]
-
-    # Page 1 for server-side render
+    # Split into shorts shelf + regular grid when showing "all"
     per_page = 48
-    page1 = filtered[:per_page]
+    if length_filter == "all":
+        shorts_shelf = [v for v in filtered if parse_duration_secs(v.get("duration", "")) < 90]
+        page_videos  = [v for v in filtered if parse_duration_secs(v.get("duration", "")) >= 90]
+    else:
+        shorts_shelf = []
+        page_videos  = filtered
+
+    page1    = page_videos[:per_page]
+    has_more = len(page_videos) > per_page
 
     return render_template("index.html",
                            videos=page1,
+                           shorts_shelf=shorts_shelf,
                            total=len(videos),
                            shown=len(filtered),
                            playlists=playlists,
                            channels=channels,
                            categories=categories,
-                           recent=recent,
                            q=q,
                            playlist_filter=playlist_filter,
                            channel_filter=channel_filter,
                            length_filter=length_filter,
                            sort_by=sort_by,
                            sort_dir=sort_dir,
-                           has_more=len(filtered) > per_page)
+                           has_more=has_more)
 
 
 @app.route("/video/<path:file_id>")
@@ -484,6 +493,9 @@ def api_videos():
     filtered = apply_filters(videos, q, playlist_filter, channel_filter, category_filter,
                              subcategory_filter, topic_filter)
     filtered = apply_length_filter(filtered, length_filter)
+    # no_shorts=1: exclude shorts from grid (they're shown in the shorts shelf)
+    if request.args.get("no_shorts") == "1":
+        filtered = [v for v in filtered if parse_duration_secs(v.get("duration", "")) >= 90]
     filtered = apply_sort(filtered, sort_by, sort_dir)
 
     # Pagination
@@ -531,6 +543,14 @@ def api_category_tree():
     """Return the category tree as JSON."""
     videos = get_cached_videos()
     return jsonify(build_category_tree(videos))
+
+
+@app.route("/discover")
+def discover():
+    """Discovery page – random video selection."""
+    videos = get_cached_videos()
+    picks = random.sample(videos, min(24, len(videos))) if videos else []
+    return render_template("discover.html", videos=picks, total=len(videos))
 
 
 @app.route("/stats")

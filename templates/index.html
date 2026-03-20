@@ -28,10 +28,10 @@
 
     <span class="filter-label">Sortierung:</span>
     <select id="filter-sort" class="sort-select">
-        <option value="uploaded:desc" {% if sort_by == 'uploaded' and sort_dir == 'desc' %}selected{% endif %}>Upload (neueste)</option>
-        <option value="uploaded:asc" {% if sort_by == 'uploaded' and sort_dir == 'asc' %}selected{% endif %}>Upload (älteste)</option>
         <option value="processed_date:desc" {% if sort_by == 'processed_date' and sort_dir == 'desc' %}selected{% endif %}>Verarbeitet (neueste)</option>
         <option value="processed_date:asc" {% if sort_by == 'processed_date' and sort_dir == 'asc' %}selected{% endif %}>Verarbeitet (älteste)</option>
+        <option value="uploaded:desc" {% if sort_by == 'uploaded' and sort_dir == 'desc' %}selected{% endif %}>Upload (neueste)</option>
+        <option value="uploaded:asc" {% if sort_by == 'uploaded' and sort_dir == 'asc' %}selected{% endif %}>Upload (älteste)</option>
         <option value="duration:desc" {% if sort_by == 'duration' and sort_dir == 'desc' %}selected{% endif %}>Dauer (längste)</option>
         <option value="duration:asc" {% if sort_by == 'duration' and sort_dir == 'asc' %}selected{% endif %}>Dauer (kürzeste)</option>
         <option value="title:asc" {% if sort_by == 'title' and sort_dir == 'asc' %}selected{% endif %}>Titel A–Z</option>
@@ -50,16 +50,16 @@
     <button class="chip {% if length_filter == 'long' %}active{% endif %}" data-length="long">Lang &gt; 20m</button>
 </div>
 
-<!-- Recently Processed -->
-{% if not q and not playlist_filter and not channel_filter and not category_filter %}
-<section class="recent-section">
+<!-- Shorts Shelf (only in "All" view) -->
+{% if length_filter == 'all' and shorts_shelf %}
+<section class="shorts-section">
     <div class="section-header">
-        <h2 class="section-title">Zuletzt verarbeitet</h2>
+        <h2 class="section-title">Shorts <span class="section-count">{{ shorts_shelf | length }}</span></h2>
     </div>
-    <div class="recent-grid">
-        {% for v in recent[:8] %}
-        <a href="/video/{{ v.id | urlencode }}" class="video-card">
-            <div class="card-thumbnail{% if v.is_short %} is-short{% endif %}">
+    <div class="shorts-shelf">
+        {% for v in shorts_shelf %}
+        <a href="/video/{{ v.id | urlencode }}" class="video-card shorts-card">
+            <div class="card-thumbnail is-short">
                 {% if v.video_id %}
                 <img loading="lazy"
                      src="https://img.youtube.com/vi/{{ v.video_id }}/maxresdefault.jpg"
@@ -67,29 +67,18 @@
                      onerror="this.src='https://img.youtube.com/vi/{{ v.video_id }}/hqdefault.jpg'">
                 {% endif %}
                 <div class="card-thumbnail-fallback" {% if v.video_id %}style="display:none"{% endif %}>{{ v.title[0] if v.title else '?' }}</div>
-                {% if v.is_short %}<span class="shorts-badge">Short</span>{% endif %}
+                <span class="shorts-badge">Short</span>
                 {% if v.duration %}<span class="card-duration">{{ v.duration }}</span>{% endif %}
             </div>
             <div class="card-body">
                 <div class="card-title">{{ v.title }}</div>
                 <div class="card-meta">
-                    <span class="channel-name">{{ v.channel }}</span> · {{ v.uploaded }}
+                    <span class="channel-name">{{ v.channel }}</span>
                 </div>
                 {% if v.tldr %}<div class="card-tldr">{{ v.tldr }}</div>{% endif %}
             </div>
         </a>
         {% endfor %}
-    </div>
-</section>
-
-<!-- Random Discovery -->
-<section class="discover-section">
-    <div class="section-header">
-        <h2 class="section-title">Zufällig entdecken</h2>
-        <button id="random-refresh" class="section-action">Neue Auswahl &#8635;</button>
-    </div>
-    <div id="random-grid" class="recent-grid">
-        <!-- Loaded via JS -->
     </div>
 </section>
 {% endif %}
@@ -105,14 +94,22 @@
                 {% if topic_filter %} › <em>{{ topic_filter }}</em>{% endif %}
             {% endif %}
             {% if q %} für „{{ q }}"{% endif %}
+        {% elif length_filter == 'short' %}
+            Shorts
+        {% elif length_filter == 'regular' %}
+            Regular Videos
+        {% elif length_filter == 'long' %}
+            Lange Videos
         {% else %}
-            Alle Videos
+            Videos
         {% endif %}
     </h2>
 </div>
 
 {% if videos %}
-<div id="video-grid" class="video-grid" data-has-more="{{ 'true' if has_more else 'false' }}">
+<div id="video-grid"
+     class="video-grid{% if length_filter == 'short' %} portrait-grid{% endif %}"
+     data-has-more="{{ 'true' if has_more else 'false' }}">
     {% for v in videos %}
     <a href="/video/{{ v.id | urlencode }}" class="video-card">
         <div class="card-thumbnail{% if v.is_short %} is-short{% endif %}">
@@ -138,7 +135,6 @@
     {% endfor %}
 </div>
 
-<!-- Scroll Sentinel for Infinite Scroll -->
 {% if has_more %}
 <div id="scroll-sentinel" class="scroll-sentinel">
     <div class="spinner"></div>
@@ -146,6 +142,10 @@
 {% else %}
 <div class="load-end">Alle Videos geladen</div>
 {% endif %}
+
+{% elif length_filter == 'all' and shorts_shelf %}
+{# Shorts exist but no regular videos — that's fine, shelf is shown above #}
+<div class="load-end">Keine weiteren Videos</div>
 
 {% else %}
 <div class="empty-state">

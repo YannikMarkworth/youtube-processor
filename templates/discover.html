@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}MyTube – Entdecken{% endblock %}
+
+{% block header_right %}
+<span class="header-stats">{{ total }} Videos gesamt</span>
+{% endblock %}
+
+{% block content %}
+<div class="section-header">
+    <h2 class="section-title">Zufällig entdecken</h2>
+    <a href="/discover" class="section-action">Neue Auswahl &#8635;</a>
+</div>
+
+<div class="video-grid">
+    {% for v in videos %}
+    <a href="/video/{{ v.id | urlencode }}" class="video-card">
+        <div class="card-thumbnail{% if v.is_short %} is-short{% endif %}">
+            {% if v.video_id %}
+            <img loading="lazy"
+                 src="https://img.youtube.com/vi/{{ v.video_id }}/maxresdefault.jpg"
+                 alt=""
+                 onerror="this.src='https://img.youtube.com/vi/{{ v.video_id }}/hqdefault.jpg'">
+            {% endif %}
+            <div class="card-thumbnail-fallback" {% if v.video_id %}style="display:none"{% endif %}>{{ v.title[0] if v.title else '?' }}</div>
+            {% if v.is_short %}<span class="shorts-badge">Short</span>{% endif %}
+            {% if v.duration %}<span class="card-duration">{{ v.duration }}</span>{% endif %}
+        </div>
+        <div class="card-body">
+            <div class="card-title">{{ v.title }}</div>
+            <div class="card-meta">
+                <span class="channel-name">{{ v.channel }}</span> · {{ v.uploaded }}
+            </div>
+            {% if v.category %}<span class="card-chip">{{ v.category }}</span>{% endif %}
+            {% if v.tldr %}<div class="card-tldr">{{ v.tldr }}</div>{% endif %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+{% if not videos %}
+<div class="empty-state">
+    <h2>Keine Videos vorhanden</h2>
+    <p>Starte zuerst <code>python main.py</code> um Videos zu verarbeiten.</p>
+</div>
+{% endif %}
+
+{% endblock %}

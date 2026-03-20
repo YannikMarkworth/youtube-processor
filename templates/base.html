@@ -44,6 +44,9 @@
                 <a href="/?sort=processed_date&dir=desc" class="sidebar-link">
                     <span class="sidebar-icon">&#128340;</span> Zuletzt verarbeitet
                 </a>
+                <a href="/discover" class="sidebar-link {% if request.path == '/discover' %}active{% endif %}">
+                    <span class="sidebar-icon">&#127922;</span> Entdecken
+                </a>
                 <a href="/stats" class="sidebar-link {% if request.path == '/stats' %}active{% endif %}">
                     <span class="sidebar-icon">&#128202;</span> Statistiken
                 </a>

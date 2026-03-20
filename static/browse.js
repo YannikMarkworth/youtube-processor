@@ -62,8 +62,12 @@
 
         // Length filter from active chip
         const activeChip = document.querySelector(".chip.active[data-length]");
-        if (activeChip && activeChip.dataset.length !== "all") {
-            params.set("length", activeChip.dataset.length);
+        const activeLength = activeChip ? activeChip.dataset.length : "all";
+        if (activeLength === "all") {
+            // Shorts are shown in the shelf; infinite scroll grid excludes them
+            params.set("no_shorts", "1");
+        } else {
+            params.set("length", activeLength);
         }
 
         return params;

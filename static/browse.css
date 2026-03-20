@@ -542,7 +542,7 @@ select:focus { border-color: rgba(255,255,255,0.3); }
     aspect-ratio: 16 / 9;
 }
 
-/* Shorts: portrait 9:16 */
+/* Shorts: portrait 9:16 (in regular grid — centered) */
 .card-thumbnail.is-short {
     aspect-ratio: 9 / 16;
     max-width: 180px;
@@ -645,6 +645,53 @@ select:focus { border-color: rgba(255,255,255,0.3); }
     line-height: 1.5;
     margin-top: 4px;
     /* No line-clamp — full text shown */
+}
+
+/* ==============================================================================
+   Shorts Shelf (horizontal scroll strip in "All" view)
+   ============================================================================== */
+
+.shorts-section {
+    margin-bottom: 32px;
+}
+
+.section-count {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--yt-text-dim);
+    margin-left: 8px;
+}
+
+.shorts-shelf {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+.shorts-shelf::-webkit-scrollbar { height: 4px; }
+.shorts-shelf::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 2px; }
+
+/* Short card in the shelf: fixed portrait width */
+.shorts-card {
+    flex: 0 0 160px;
+    min-width: 0;
+}
+.shorts-card .card-thumbnail {
+    aspect-ratio: 9 / 16;
+    max-width: none;  /* override centered constraint */
+    margin: 0;
+}
+
+/* Portrait grid for "Shorts" chip filter view */
+.portrait-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+}
+.portrait-grid .card-thumbnail {
+    aspect-ratio: 9 / 16;
+    max-width: none;
+    margin: 0;
 }
 
 /* ==============================================================================
